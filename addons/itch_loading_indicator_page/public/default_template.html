@@ -1,0 +1,88 @@
+<div id="ilip" class="fit-{{fit}}">
+	<img id="ilip-art" alt="" data-src="{{IMAGE_SRC}}" onerror="this.remove()">
+	<div id="ilip-track" class="pos-{{progress_placement}} hidden-{{progress_hidden}}"><div id="ilip-fill"></div></div>
+</div>
+<style>
+	#ilip {
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 32px;
+		background: {{background_color}};
+		opacity: 1;
+		transition: opacity 0.35s ease-out;
+	}
+
+	#ilip.is-done {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	#ilip-art {
+		width: 256px;
+		max-width: 60vw;
+		height: auto;
+	}
+
+	#ilip.fit-cover #ilip-art,
+	#ilip.fit-contain #ilip-art {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		max-width: none;
+		height: 100%;
+	}
+
+	#ilip.fit-cover #ilip-art {
+		object-fit: cover;
+	}
+
+	#ilip.fit-contain #ilip-art {
+		object-fit: contain;
+	}
+
+	#ilip-track {
+		position: relative;
+		width: {{progress_width}};
+		height: {{progress_height}};
+		border-radius: 999px;
+		overflow: hidden;
+		background: {{track_color}};
+	}
+
+	#ilip-track.hidden-true {
+		display: none;
+	}
+
+	#ilip-track.pos-top,
+	#ilip-track.pos-center,
+	#ilip-track.pos-bottom {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+	}
+
+	#ilip-track.pos-top {
+		top: 6vh;
+	}
+
+	#ilip-track.pos-center {
+		top: 50%;
+		transform: translate(-50%, -50%);
+	}
+
+	#ilip-track.pos-bottom {
+		bottom: 6vh;
+	}
+
+	#ilip-fill {
+		width: var(--ilip-progress-percent, 0%);
+		height: 100%;
+		background: {{progress_color}};
+		transition: width 0.2s linear;
+	}
+</style>
