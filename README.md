@@ -4,7 +4,11 @@
 ![Static Badge](https://img.shields.io/badge/platform-Web-7a34eb)
 ![Static Badge](https://img.shields.io/badge/shell-untouched-81B622)
 
-A loading screen for Godot web exports that covers the `index.wasm` and `index.pck` download. Made specifically for itch.io.
+A loading screen for Godot web exports that covers game download. Made specifically for itch.io
+
+<h2 align="center">
+	<img alt="Itch loading indicator page" src="https://raw.githubusercontent.com/paufau/godot-itch-loading-indicator-page/refs/heads/main/assets/featured.png" />
+</h2>
 
 ## ✨ Features
 
@@ -24,9 +28,26 @@ A loading screen for Godot web exports that covers the `index.wasm` and `index.p
 
 ## Use cases
 
-**Fullscreen key art, no bar.** Set `Parameters` to `{ "fit": "cover", "progress_hidden": true }`.
+**Fullscreen key art, no bar.** Set `Parameters` to 
 
-**Art plus a thin bar pinned to the bottom.** `{ "fit": "cover", "progress_placement": "bottom", "progress_width": "100vw", "progress_height": "12px", "progress_color": "#7CFF6D" }`.
+```json
+{ 
+  "fit": "cover", 
+  "progress_hidden": true 
+}
+```
+
+**Art plus a thin bar pinned to the bottom.** 
+
+```json
+{ 
+  "fit": "cover", 
+  "progress_placement": "bottom", 
+  "progress_width": "100vw", 
+  "progress_height": "12px", 
+  "progress_color": "#7CFF6D" 
+}
+```
 
 **Your own markup.** Copy `public/default_template.html`, point `Template` at the copy, and address anything from `Assets` as `{{ASSETS_DIR}}/logo.svg`.
 
