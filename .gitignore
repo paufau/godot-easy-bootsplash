@@ -16,3 +16,4 @@ mono_crash.*.json
 
 # files
 **/.DS_Store
+dist/
