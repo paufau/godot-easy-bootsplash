@@ -19,7 +19,7 @@ A loading screen for Godot web exports that covers game download. Made specifica
 
 ## Usage
 
-1. Install the addon from Asset Store or from source (copy addons folder to your project directory)
+1. Install the addon from [Asset Library](https://godotengine.org/asset-library/asset/5394) or from source (copy addons folder to your project directory)
 1. Enable the plugin in your Project Settings
 1. Replace `addons/itch_loading_indicator_page/assets/background` with your game icon or image
 1. Go to Project -> Export -> Web -> "Itch Loading Indicator Page" section
