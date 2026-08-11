@@ -17,6 +17,8 @@ A loading screen for Godot web exports that covers game download. Made specifica
 - 🎨 Built-in look configuration available from the export preset
 - 🧩 Replace default template with HTML of your own
 
+See how the built-in template looks in every fit and placement combination on the [live test bench](https://paufau.github.io/godot-itch-loading-indicator-page/test/).
+
 ## Usage
 
 1. Install the addon from [Asset Library](https://godotengine.org/asset-library/asset/5394) or from source (copy addons folder to your project directory)
