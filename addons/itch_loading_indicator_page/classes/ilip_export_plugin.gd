@@ -28,7 +28,9 @@ const DEFAULT_PARAMETERS := {
 	"progress_radius": "999px",
 	"progress_margin": "12px",
 	"progress_color": "#FF244A",
-	"track_color": "rgba(255, 255, 255, 0.9)"
+	"track_color": "rgba(255, 255, 255, 0.9)",
+	"progress_smoothing_ms": 600,
+	"hide_awaits_full_progress": false
 }
 
 const HTML_EXTENSIONS: PackedStringArray = ["html", "htm"]

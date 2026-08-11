@@ -11,6 +11,8 @@
 	var GRACE_MS = 3000;
 	var ROOT_ID = "ilip";
 	var DONE_CLASS = "is-done";
+	var SMOOTH_CLASS = "is-smooth";
+	var MAX_TICK_MS = 100;
 
 	var progressHandlers = [];
 	var doneHandlers = [];
@@ -21,6 +23,12 @@
 	var ratio = 0;
 	var current = 0;
 	var total = 0;
+	var displayed = 0;
+	var animating = false;
+	var lastTick = 0;
+	var pendingDismiss = false;
+	var failedFinish = false;
+	var floorRatio = 0;
 
 	function findRoot() {
 		if (root === null) {
@@ -38,6 +46,70 @@
 		}
 	}
 
+	function smoothingMs() {
+		var value = Number(api.params && api.params.progress_smoothing_ms);
+
+		return isFinite(value) && value > 0 ? value : 0;
+	}
+
+	function awaitsFull() {
+		return !!(api.params && api.params.hide_awaits_full_progress === true);
+	}
+
+	function render(value) {
+		var node = findRoot();
+
+		if (node) {
+			node.style.setProperty("--ilip-progress", String(value));
+			node.style.setProperty("--ilip-progress-percent", (value * 100).toFixed(2) + "%");
+		}
+	}
+
+	function targetRatio() {
+		return Math.max(ratio, floorRatio);
+	}
+
+	function tick(now) {
+		if (dismissed) {
+			animating = false;
+			return;
+		}
+
+		var target = targetRatio();
+		var dt = Math.min(Math.max(now - lastTick, 0), MAX_TICK_MS);
+
+		lastTick = now;
+		displayed = Math.min(target, displayed + dt / smoothingMs());
+		render(displayed);
+
+		if (displayed < target) {
+			window.requestAnimationFrame(tick);
+			return;
+		}
+
+		animating = false;
+
+		if (pendingDismiss) {
+			dismissNow();
+		}
+	}
+
+	function animate() {
+		var node = findRoot();
+
+		if (node) {
+			node.classList.add(SMOOTH_CLASS);
+		}
+
+		if (animating) {
+			return;
+		}
+
+		animating = true;
+		lastTick = window.performance.now();
+		window.requestAnimationFrame(tick);
+	}
+
 	function setProgress(loaded, size) {
 		current = loaded;
 		total = size;
@@ -46,11 +118,11 @@
 			ratio = Math.max(0, Math.min(1, loaded / size));
 		}
 
-		var node = findRoot();
-
-		if (node) {
-			node.style.setProperty("--ilip-progress", String(ratio));
-			node.style.setProperty("--ilip-progress-percent", (ratio * 100).toFixed(2) + "%");
+		if (smoothingMs() > 0 && !failedFinish) {
+			animate();
+		} else {
+			displayed = ratio;
+			render(ratio);
 		}
 
 		for (var i = 0; i < progressHandlers.length; i++) {
@@ -59,6 +131,29 @@
 	}
 
 	function dismiss() {
+		if (dismissed) {
+			return;
+		}
+
+		if (awaitsFull()) {
+			floorRatio = 1;
+		}
+
+		if (displayed < targetRatio()) {
+			if (smoothingMs() > 0) {
+				pendingDismiss = true;
+				animate();
+				return;
+			}
+
+			displayed = targetRatio();
+			render(displayed);
+		}
+
+		dismissNow();
+	}
+
+	function dismissNow() {
 		if (dismissed) {
 			return;
 		}
@@ -82,9 +177,13 @@
 	}
 
 	function finish(failed) {
+		if (failed) {
+			failedFinish = true;
+		}
+
 		if (finished) {
 			if (failed) {
-				dismiss();
+				dismissNow();
 			}
 
 			return;
@@ -97,7 +196,9 @@
 			call(doneHandlers[i], []);
 		}
 
-		if (failed || api.mode === "on-engine-load") {
+		if (failed) {
+			dismissNow();
+		} else if (api.mode === "on-engine-load") {
 			dismiss();
 		}
 	}

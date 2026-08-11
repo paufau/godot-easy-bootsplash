@@ -106,8 +106,17 @@ Directory copied next to the shell as `ilip_assets/`, recursively.
 | `progress_placement` | `below`, or `top` / `center` / `bottom` to pin it to an edge |
 | `progress_width`     | `min(50vw, 360px)`                                           |
 | `progress_height`    | `10px`                                                       |
+| `progress_radius`    | `999px`                                                      |
+| `progress_margin`    | `12px`; gap between the bar and the screen edge / artwork    |
 | `progress_color`     | `#FF244A`                                                    |
 | `track_color`        | `rgba(255, 255, 255, 0.9)`                                   |
+
+Two more keys are read by the runtime rather than the template:
+
+| Key                        | Default                                                                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `progress_smoothing_ms`    | `600`. Time in ms for a full 0→100% sweep; the bar glides toward the real progress at that constant speed instead of jumping, and the overlay waits for the animation to finish before fading out. `0` disables smoothing. On a load failure the bar snaps and the overlay closes immediately. |
+| `hide_awaits_full_progress` | `false`. When `true`, `ILIP.hide()` first drives the bar to 100% (animated when smoothing is on) and only then hides the overlay.                 |
 
 Feel free to add your own keys if you need to customize your own template
 

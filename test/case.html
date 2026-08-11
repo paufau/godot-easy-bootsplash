@@ -19,10 +19,51 @@
 			height: 100%;
 			background: #111;
 		}
+
+		#case-hud {
+			position: absolute;
+			top: 8px;
+			left: 8px;
+			z-index: 2147483647;
+			display: flex;
+			gap: 6px;
+			font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+		}
+
+		.lamp {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			padding: 4px 8px;
+			border-radius: 999px;
+			background: rgba(0, 0, 0, 0.55);
+			color: rgba(255, 255, 255, 0.45);
+		}
+
+		.lamp::before {
+			content: "";
+			width: 7px;
+			height: 7px;
+			border-radius: 50%;
+			background: rgba(255, 255, 255, 0.25);
+		}
+
+		.lamp.on {
+			color: #FDE047;
+		}
+
+		.lamp.on::before {
+			background: #FDE047;
+			box-shadow: 0 0 6px #FDE047;
+		}
 	</style>
 </head>
 <body>
 	<canvas id="canvas"></canvas>
+	<div id="case-hud">
+		<span class="lamp" id="lamp-hide">hide()</span>
+		<span class="lamp" id="lamp-hidden">hidden</span>
+	</div>
 	<script src="../addons/itch_loading_indicator_page/public/runtime.js"></script>
 	<script>
 		(async function () {
@@ -39,22 +80,80 @@
 				progress_radius: "999px",
 				progress_margin: "12px",
 				progress_color: "#FF244A",
-				track_color: "rgba(255, 255, 255, 0.9)"
+				track_color: "rgba(255, 255, 255, 0.9)",
+				progress_smoothing_ms: 600,
+				hide_awaits_full_progress: false
 			};
 
 			var query = new URLSearchParams(location.search);
 			var params = Object.assign({}, DEFAULTS);
 
+			function flag(key) {
+				var value = query.get(key);
+
+				return value === "1" || value === "true";
+			}
+
 			query.forEach(function (value, key) {
 				if (key in DEFAULTS) {
-					params[key] = value;
+					params[key] = typeof DEFAULTS[key] === "boolean" ? flag(key) : value;
 				}
 			});
 
-			var dismiss = query.get("dismiss") === "1";
+			var dismiss = flag("dismiss");
+			var jump = flag("jump");
+			var hideAt = Number(query.get("hideAt")) || 0;
 
 			window.ILIP.params = params;
-			window.__ilipCase = { params: params, dismiss: dismiss };
+
+			var state = {
+				params: params,
+				dismiss: dismiss,
+				hideCalledAtRatio: null,
+				lastDisplayed: null,
+				overlayRemoved: false
+			};
+			window.__ilipCase = state;
+
+			function light(id, label) {
+				var lamp = document.getElementById(id);
+				lamp.classList.add("on");
+				lamp.textContent = label;
+			}
+
+			var innerHide = window.ILIP.hide;
+			window.ILIP.hide = function () {
+				if (state.hideCalledAtRatio === null) {
+					state.hideCalledAtRatio = window.ILIP.getProgress();
+					light("lamp-hide", "hide() @ " + Math.round(state.hideCalledAtRatio * 100) + "%");
+				}
+
+				return innerHide();
+			};
+
+			var seenOverlay = false;
+			var watcher = setInterval(function () {
+				var node = document.getElementById("ilip");
+
+				if (node) {
+					seenOverlay = true;
+					var value = parseFloat(node.style.getPropertyValue("--ilip-progress"));
+
+					if (!isNaN(value)) {
+						state.lastDisplayed = value;
+					}
+				} else if (seenOverlay) {
+					state.overlayRemoved = true;
+					light("lamp-hidden", "hidden @ " + Math.round((state.lastDisplayed || 0) * 100) + "%");
+					clearInterval(watcher);
+
+					if (query.get("restart") !== "0") {
+						setTimeout(function () {
+							location.reload();
+						}, 1500);
+					}
+				}
+			}, 50);
 
 			var tokens = Object.assign({
 				IMAGE_SRC: "../addons/itch_loading_indicator_page/assets/background.png",
@@ -88,14 +187,30 @@
 				return new Promise(function (resolve) {
 					var loaded = 0;
 					var total = 100;
-					var timer = setInterval(function () {
+					var timer;
+
+					function complete() {
+						clearInterval(timer);
+						onProgress(total, total);
+
+						if (dismiss) {
+							resolve();
+						}
+					}
+
+					timer = setInterval(function () {
 						loaded += 2;
+
+						if (jump && loaded >= 20) {
+							clearInterval(timer);
+							onProgress(20, total);
+							setTimeout(complete, 800);
+							return;
+						}
 
 						if (loaded >= total) {
 							if (dismiss) {
-								clearInterval(timer);
-								onProgress(total, total);
-								resolve();
+								complete();
 								return;
 							}
 
@@ -103,6 +218,11 @@
 						}
 
 						onProgress(loaded, total);
+
+						if (hideAt > 0 && loaded >= hideAt) {
+							hideAt = 0;
+							window.ILIP.hide();
+						}
 					}, 100);
 				});
 			};

@@ -263,8 +263,12 @@
 			{ fit: "contain", progress_placement: "top" },
 			{ fit: "centered", progress_placement: "bottom" },
 			{ fit: "cover", progress_placement: "bottom", progress_width: "100vw", progress_height: "12px", progress_radius: "0", progress_margin: "0" },
-			{ fit: "centered", progress_placement: "below", progress_hidden: true }
+			{ fit: "centered", progress_placement: "below", progress_hidden: true },
+			{ fit: "centered", progress_placement: "below", progress_smoothing_ms: 3000, hide_awaits_full_progress: true, hideAt: 20, dismiss: 1 },
+			{ fit: "centered", progress_placement: "below", progress_smoothing_ms: 3000, hide_awaits_full_progress: false, hideAt: 20, dismiss: 1 }
 		];
+
+		var CONTROL_KEYS = ["hideAt", "dismiss", "jump", "restart"];
 
 		var MODES = {
 			portrait: { width: 280, height: 500 },
@@ -301,6 +305,11 @@
 
 			if (!track) {
 				var caseError = doc.getElementById("case-error");
+
+				if (!caseError && win.__ilipCase && win.__ilipCase.overlayRemoved) {
+					return [];
+				}
+
 				return [caseError
 					? "case page crashed: " + caseError.textContent
 					: "#ilip-track is missing from the DOM"];
@@ -339,6 +348,19 @@
 			if (!(progress > 0)) {
 				failures.push("progress never updates (--ilip-progress = " +
 					(root ? root.style.getPropertyValue("--ilip-progress") || "empty" : "no #ilip") + ")");
+			}
+
+			if (Number(params.progress_smoothing_ms) > 0) {
+				var raw = win.ILIP.getProgress();
+
+				if (progress > raw + 0.001) {
+					failures.push("smoothing: displayed progress (" + progress.toFixed(3) +
+						") is ahead of the raw ratio (" + raw.toFixed(3) + ")");
+				}
+
+				if (root && !root.classList.contains("is-smooth")) {
+					failures.push("smoothing is on but #ilip never got the is-smooth class");
+				}
 			}
 
 			var fill = doc.getElementById("ilip-fill");
@@ -419,23 +441,63 @@
 			return failures;
 		}
 
-		function waitForProgress(win, params, timeoutMs) {
+		function pollUntil(check, timeoutMs) {
 			return new Promise(function (resolve) {
 				var started = performance.now();
 				var timer = setInterval(function () {
-					var doc = win.document;
-					var root = doc && doc.getElementById("ilip");
-					var track = doc && doc.getElementById("ilip-track");
-					var ready = params.progress_hidden
-						? Boolean(track)
-						: Boolean(root) && parseFloat(root.style.getPropertyValue("--ilip-progress")) > 0;
+					var done = check();
 
-					if (ready || performance.now() - started > timeoutMs) {
+					if (done || performance.now() - started > timeoutMs) {
 						clearInterval(timer);
-						resolve();
+						resolve(done);
 					}
 				}, 100);
 			});
+		}
+
+		function waitForCompletion(win, params, timeoutMs) {
+			return pollUntil(function () {
+				return Boolean(win.__ilipCase && win.__ilipCase.overlayRemoved);
+			}, timeoutMs).then(function (removed) {
+				if (!removed) {
+					return ["overlay was never dismissed"];
+				}
+
+				var state = win.__ilipCase;
+				var failures = [];
+
+				if (params.hideAt && state.hideCalledAtRatio === null) {
+					failures.push("hide() was never called");
+				}
+
+				if (Number(params.progress_smoothing_ms) > 0 && params.hideAt) {
+					var displayed = state.lastDisplayed;
+
+					if (params.hide_awaits_full_progress && !(displayed >= 0.95)) {
+						failures.push("hide_awaits_full_progress: overlay went at " +
+							Math.round((displayed || 0) * 100) + "%, expected ~100%");
+					}
+
+					if (!params.hide_awaits_full_progress && !(displayed <= params.hideAt / 100 + 0.1)) {
+						failures.push("overlay waited until " + Math.round((displayed || 0) * 100) +
+							"% although hide_awaits_full_progress is off");
+					}
+				}
+
+				return failures;
+			});
+		}
+
+		function waitForProgress(win, params, timeoutMs) {
+			return pollUntil(function () {
+				var doc = win.document;
+				var root = doc && doc.getElementById("ilip");
+				var track = doc && doc.getElementById("ilip-track");
+
+				return params.progress_hidden
+					? Boolean(track)
+					: Boolean(root) && parseFloat(root.style.getPropertyValue("--ilip-progress")) > 0;
+			}, timeoutMs);
 		}
 
 		function runCase(params, cell) {
@@ -461,7 +523,14 @@
 					resolve(failures.length === 0);
 				}
 
+				var checked = false;
+
 				iframe.addEventListener("load", function () {
+					if (checked) {
+						return;
+					}
+
+					checked = true;
 					waitForProgress(iframe.contentWindow, params, 5000).then(function () {
 						var evaluate = function () {
 							try {
@@ -479,7 +548,14 @@
 
 							if (!failures.length || performance.now() > deadline) {
 								clearInterval(timer);
-								report(failures);
+
+								if (params.hideAt || params.dismiss) {
+									waitForCompletion(iframe.contentWindow, params, 15000).then(function (rest) {
+										report(failures.concat(rest));
+									});
+								} else {
+									report(failures);
+								}
 							}
 						}, 100);
 					});
@@ -505,7 +581,9 @@
 			var size = MODES[mode];
 			var runs = CASES.map(function (params) {
 				var url = caseUrl(params);
-				var json = JSON.stringify(params, null, 1).replace(/\n\s*/g, " ");
+				var json = JSON.stringify(params, function (key, value) {
+					return CONTROL_KEYS.indexOf(key) === -1 ? value : undefined;
+				}, 1).replace(/\n\s*/g, " ");
 
 				var cell = document.createElement("div");
 				cell.className = "case";
