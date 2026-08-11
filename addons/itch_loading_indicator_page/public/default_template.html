@@ -11,7 +11,8 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 32px;
+		--ilip-gap: 32px;
+		gap: var(--ilip-gap);
 		background: {{background_color}};
 		opacity: 1;
 		transition: opacity 0.35s ease-out;
@@ -26,6 +27,8 @@
 		width: 256px;
 		max-width: 60vw;
 		height: auto;
+		max-height: 50vh;
+		object-fit: contain;
 	}
 
 	#ilip.fit-cover #ilip-art,
@@ -35,6 +38,7 @@
 		width: 100%;
 		max-width: none;
 		height: 100%;
+		max-height: none;
 	}
 
 	#ilip.fit-cover #ilip-art {
@@ -49,9 +53,10 @@
 		position: relative;
 		width: {{progress_width}};
 		height: {{progress_height}};
-		border-radius: 999px;
+		border-radius: {{progress_radius}};
 		overflow: hidden;
 		background: {{track_color}};
+		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12), 0 2px 12px rgba(0, 0, 0, 0.3);
 	}
 
 	#ilip-track.hidden-true {
@@ -67,7 +72,7 @@
 	}
 
 	#ilip-track.pos-top {
-		top: 6vh;
+		top: {{progress_margin}};
 	}
 
 	#ilip-track.pos-center {
@@ -76,7 +81,17 @@
 	}
 
 	#ilip-track.pos-bottom {
-		bottom: 6vh;
+		bottom: {{progress_margin}};
+	}
+
+	/* runtime.js measures the rendered art bottom into --ilip-art-bottom;
+	   clamped to the page bottom when there is no room under the image. */
+	#ilip.fit-cover #ilip-track.pos-below,
+	#ilip.fit-contain #ilip-track.pos-below {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		top: min(calc(var(--ilip-art-bottom, 100%) + var(--ilip-gap)), calc(100% - {{progress_margin}} - {{progress_height}}));
 	}
 
 	#ilip-fill {

@@ -35,17 +35,21 @@
 			font-size: 20px;
 			font-weight: 600;
 			margin: 0;
+			text-align: center;
 		}
 
 		.subtitle {
-			margin: 4px 0 0;
+			margin: 4px auto 0;
+			max-width: 720px;
 			font-size: 13px;
 			color: var(--text-dim);
+			text-align: center;
 		}
 
 		#toolbar {
 			display: flex;
 			align-items: center;
+			justify-content: center;
 			flex-wrap: wrap;
 			gap: 16px;
 			margin: 20px 0;
@@ -113,6 +117,7 @@
 		#grid {
 			display: flex;
 			flex-wrap: wrap;
+			justify-content: center;
 			gap: 16px;
 		}
 
@@ -257,6 +262,7 @@
 			{ fit: "contain", progress_placement: "bottom" },
 			{ fit: "contain", progress_placement: "top" },
 			{ fit: "centered", progress_placement: "bottom" },
+			{ fit: "cover", progress_placement: "bottom", progress_width: "100vw", progress_height: "12px", progress_radius: "0", progress_margin: "0" },
 			{ fit: "centered", progress_placement: "below", progress_hidden: true }
 		];
 
@@ -294,7 +300,10 @@
 			var track = doc.getElementById("ilip-track");
 
 			if (!track) {
-				return ["#ilip-track is missing from the DOM"];
+				var caseError = doc.getElementById("case-error");
+				return [caseError
+					? "case page crashed: " + caseError.textContent
+					: "#ilip-track is missing from the DOM"];
 			}
 
 			var display = win.getComputedStyle(track).display;
@@ -346,15 +355,29 @@
 				failures.push("track center is covered by " + describe(hit));
 			}
 
-			// top/bottom mean "pinned to the page edge": the gap between the
-			// track and the edge must stay within a small padding.
-			var pinLimit = Math.max(16, vh * 0.03);
+			if ((params.progress_width || "").slice(-2) === "vw") {
+				var expectedWidth = vw * parseFloat(params.progress_width) / 100;
+
+				if (Math.abs(rect.width - expectedWidth) > 2) {
+					failures.push("track width is " + px(rect.width) + ", expected " + px(expectedWidth));
+				}
+			}
+
+			if (parseFloat(params.progress_radius) === 0) {
+				var radius = parseFloat(win.getComputedStyle(track).borderTopLeftRadius);
+
+				if (radius > 0) {
+					failures.push("track still has a border radius (" + px(radius) + ")");
+				}
+			}
+
+			var margin = parseFloat(win.ILIP.params.progress_margin);
 
 			switch (params.progress_placement) {
 				case "top":
-					if (rect.top > pinLimit) {
-						failures.push("top: track is not pinned to the top edge (gap " +
-							px(rect.top) + ", allowed " + px(pinLimit) + ")");
+					if (Math.abs(rect.top - margin) > 2) {
+						failures.push("top: gap to the top edge is " + px(rect.top) +
+							", expected " + px(margin));
 					}
 					break;
 				case "center":
@@ -364,23 +387,31 @@
 					}
 					break;
 				case "bottom":
-					if (vh - rect.bottom > pinLimit) {
-						failures.push("bottom: track is not pinned to the bottom edge (gap " +
-							px(vh - rect.bottom) + ", allowed " + px(pinLimit) + ")");
+					if (Math.abs(vh - rect.bottom - margin) > 2) {
+						failures.push("bottom: gap to the bottom edge is " + px(vh - rect.bottom) +
+							", expected " + px(margin));
 					}
 					break;
 				case "below":
-					if (params.fit === "cover" || params.fit === "contain") {
-						if (!(cy > vh / 2 + 5)) {
-							failures.push("below + " + params.fit + ": track should sit below the vertical center, but its center is at " +
-								Math.round(cy) + " of " + vh);
-						}
-					} else {
-						var art = doc.getElementById("ilip-art");
+					var art = doc.getElementById("ilip-art");
 
-						if (art && rect.top <= art.getBoundingClientRect().bottom) {
-							failures.push("below: track is not below the logo");
+					if (params.fit === "cover" || params.fit === "contain") {
+						var artBottom = parseFloat(root.style.getPropertyValue("--ilip-art-bottom"));
+
+						if (isNaN(artBottom)) {
+							artBottom = vh;
 						}
+
+						var gap = parseFloat(win.getComputedStyle(root).rowGap) || 0;
+						var expectedTop = Math.min(artBottom + gap, vh - margin - rect.height);
+
+						if (Math.abs(rect.top - expectedTop) > 2) {
+							failures.push("below: track top is at " + px(rect.top) + ", expected " +
+								px(expectedTop) + " (art bottom " + px(artBottom) + " + gap " +
+								px(gap) + ", clamped to the page bottom)");
+						}
+					} else if (art && rect.top <= art.getBoundingClientRect().bottom) {
+						failures.push("below: track is not below the logo");
 					}
 					break;
 			}
@@ -410,32 +441,47 @@
 		function runCase(params, cell) {
 			return new Promise(function (resolve) {
 				var iframe = cell.querySelector("iframe");
+
+				function report(failures) {
+					var badge = cell.querySelector(".badge");
+					badge.textContent = failures.length ? "FAIL" : "PASS";
+					badge.classList.add(failures.length ? "fail" : "pass");
+
+					if (failures.length) {
+						var list = document.createElement("ul");
+						list.className = "failures";
+						failures.forEach(function (text) {
+							var item = document.createElement("li");
+							item.textContent = text;
+							list.appendChild(item);
+						});
+						cell.appendChild(list);
+					}
+
+					resolve(failures.length === 0);
+				}
+
 				iframe.addEventListener("load", function () {
 					waitForProgress(iframe.contentWindow, params, 5000).then(function () {
-						var failures;
+						var evaluate = function () {
+							try {
+								return collectFailures(iframe.contentWindow, params);
+							} catch (error) {
+								return ["check failed to run: " + error.message];
+							}
+						};
 
-						try {
-							failures = collectFailures(iframe.contentWindow, params);
-						} catch (error) {
-							failures = ["check failed to run: " + error.message];
-						}
+						// A measurement can catch a CSS transition mid-frame:
+						// poll until the checks pass or a short deadline expires.
+						var deadline = performance.now() + 1000;
+						var timer = setInterval(function () {
+							var failures = evaluate();
 
-						var badge = cell.querySelector(".badge");
-						badge.textContent = failures.length ? "FAIL" : "PASS";
-						badge.classList.add(failures.length ? "fail" : "pass");
-
-						if (failures.length) {
-							var list = document.createElement("ul");
-							list.className = "failures";
-							failures.forEach(function (text) {
-								var item = document.createElement("li");
-								item.textContent = text;
-								list.appendChild(item);
-							});
-							cell.appendChild(list);
-						}
-
-						resolve(failures.length === 0);
+							if (!failures.length || performance.now() > deadline) {
+								clearInterval(timer);
+								report(failures);
+							}
+						}, 100);
 					});
 				});
 			});
@@ -520,7 +566,7 @@
 		buttons.landscape.addEventListener("click", function () { render("landscape"); });
 
 		var initialMode = new URLSearchParams(location.search).get("mode");
-		render(initialMode in MODES ? initialMode : "portrait");
+		render(initialMode in MODES ? initialMode : "landscape");
 	</script>
 </body>
 </html>

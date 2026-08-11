@@ -36,6 +36,8 @@
 				progress_placement: "below",
 				progress_width: "min(50vw, 360px)",
 				progress_height: "10px",
+				progress_radius: "999px",
+				progress_margin: "12px",
 				progress_color: "#FF244A",
 				track_color: "rgba(255, 255, 255, 0.9)"
 			};
@@ -61,6 +63,12 @@
 			}, params);
 
 			var response = await fetch("../addons/itch_loading_indicator_page/public/default_template.html");
+
+			if (!response.ok) {
+				throw new Error("template fetch failed: HTTP " + response.status +
+					" — serve the repository root (python3 test/serve.py), not the test/ folder");
+			}
+
 			var template = await response.text();
 			// Same substitution as classes/ilip_template_enricher.gd.
 			var fragment = template.replace(/\{\{(\w+)\}\}/g, function (match, key) {
@@ -70,13 +78,7 @@
 			// The export plugin injects the fragment right before <canvas>.
 			document.getElementById("canvas").insertAdjacentHTML("beforebegin", fragment);
 
-			// runtime.js hydrates [data-src] on DOMContentLoaded, which fired before
-			// the fragment existed — promote it here instead.
-			var art = document.querySelector("#ilip [data-src]");
-
-			if (art) {
-				art.setAttribute("src", art.getAttribute("data-src"));
-			}
+			window.ILIP.hydrate();
 
 			function FakeEngine() {}
 
@@ -109,7 +111,16 @@
 			// onProgress wrapping is exercised.
 			window.Engine = FakeEngine;
 			new window.Engine().startGame({});
-		})();
+		})().catch(function (error) {
+			var banner = document.createElement("pre");
+			banner.id = "case-error";
+			banner.textContent = String(error) +
+				(error && error.stack ? "\n" + error.stack : "");
+			banner.style.cssText = "position: absolute; left: 0; right: 0; bottom: 0; z-index: 9;" +
+				"margin: 0; padding: 12px; background: #7F1D1D; color: #FFF;" +
+				"font: 12px/1.5 monospace; white-space: pre-wrap;";
+			document.body.appendChild(banner);
+		});
 	</script>
 </body>
 </html>

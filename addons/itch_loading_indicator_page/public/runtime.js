@@ -74,6 +74,7 @@
 		node.classList.add(DONE_CLASS);
 		window.setTimeout(function () {
 			node.remove();
+			window.removeEventListener("resize", updateArtBottom);
 			root = null;
 			progressHandlers.length = 0;
 			doneHandlers.length = 0;
@@ -121,6 +122,7 @@
 			return api;
 		},
 		hide: dismiss,
+		hydrate: hydrateArt,
 		getProgress: function () {
 			return ratio;
 		},
@@ -198,6 +200,35 @@
 		}
 	}
 
+	// Rendered bottom edge of the artwork, consumed by the template's
+	// "below" placement for cover/contain.
+	function updateArtBottom() {
+		var node = findRoot();
+
+		if (!node) {
+			return;
+		}
+
+		var bottom;
+
+		if (node.classList.contains("fit-cover")) {
+			bottom = node.clientHeight;
+		} else if (node.classList.contains("fit-contain")) {
+			var art = node.querySelector("img");
+
+			if (!art || !art.naturalWidth || !art.naturalHeight) {
+				return;
+			}
+
+			var scale = Math.min(node.clientWidth / art.naturalWidth, node.clientHeight / art.naturalHeight);
+			bottom = (node.clientHeight + art.naturalHeight * scale) / 2;
+		} else {
+			return;
+		}
+
+		node.style.setProperty("--ilip-art-bottom", bottom.toFixed(1) + "px");
+	}
+
 	function hydrateArt() {
 		var node = findRoot();
 		var art = node && node.querySelector("[data-src]");
@@ -207,12 +238,17 @@
 		}
 
 		var src = art.getAttribute("data-src");
+		art.removeAttribute("data-src");
 
-		if (src) {
-			art.setAttribute("src", src);
-		} else {
+		if (!src) {
 			art.remove();
+			return;
 		}
+
+		art.addEventListener("load", updateArtBottom);
+		art.setAttribute("src", src);
+		window.addEventListener("resize", updateArtBottom);
+		updateArtBottom();
 	}
 
 	function observeShell() {

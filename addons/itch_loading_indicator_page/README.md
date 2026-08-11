@@ -80,9 +80,11 @@ Directory copied next to the shell as `ilip_assets/`, recursively.
 | `background_color`   | `#5F5F5F`                                                    |
 | `fit`                | `centered`, or `cover` / `contain` to fill the screen        |
 | `progress_hidden`    | `false`; `true` drops the bar                                |
-| `progress_placement` | `below`, or `top` / `center` / `bottom` to pin it to an edge |
+| `progress_placement` | `below` to sit under the artwork (falls back to the page bottom when there is no room, e.g. with `cover`), or `top` / `center` / `bottom` to pin it to an edge |
 | `progress_width`     | `min(50vw, 360px)`                                           |
 | `progress_height`    | `10px`                                                       |
+| `progress_radius`    | `999px`; set `0` for square corners                          |
+| `progress_margin`    | `12px` gap between the bar and the page edge for `top` / `bottom` (and the `below` fallback); set `0` to touch the edge |
 | `progress_color`     | `#FF244A`                                                    |
 | `track_color`        | `rgba(255, 255, 255, 0.9)`                                   |
 

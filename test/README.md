@@ -1,7 +1,7 @@
 ## Run
 
 ```sh
-python3 -m http.server 8000
+python3 test/serve.py
 ```
 
 ## Use

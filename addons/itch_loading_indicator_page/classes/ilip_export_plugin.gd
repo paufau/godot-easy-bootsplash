@@ -25,6 +25,8 @@ const DEFAULT_PARAMETERS := {
 	"progress_placement": "below",
 	"progress_width": "min(50vw, 360px)",
 	"progress_height": "10px",
+	"progress_radius": "999px",
+	"progress_margin": "12px",
 	"progress_color": "#FF244A",
 	"track_color": "rgba(255, 255, 255, 0.9)"
 }
