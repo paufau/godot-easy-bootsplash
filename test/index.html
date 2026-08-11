@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>ILIP template test bench</title>
+	<style>
+		:root {
+			--bg: #0F172A;
+			--surface: #1E293B;
+			--surface-deep: #0B1120;
+			--border: #334155;
+			--text: #F8FAFC;
+			--text-dim: #94A3B8;
+			--pass: #22C55E;
+			--pass-dim: rgba(34, 197, 94, 0.15);
+			--fail: #EF4444;
+			--fail-dim: rgba(239, 68, 68, 0.12);
+			--link: #60A5FA;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		body {
+			margin: 0;
+			padding: 24px;
+			font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+			background: var(--bg);
+			color: var(--text);
+		}
+
+		h1 {
+			font-size: 20px;
+			font-weight: 600;
+			margin: 0;
+		}
+
+		.subtitle {
+			margin: 4px 0 0;
+			font-size: 13px;
+			color: var(--text-dim);
+		}
+
+		#toolbar {
+			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 16px;
+			margin: 20px 0;
+		}
+
+		.segmented {
+			display: flex;
+			padding: 3px;
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			background: var(--surface-deep);
+		}
+
+		.segmented button {
+			padding: 6px 14px;
+			border: 0;
+			border-radius: 6px;
+			background: transparent;
+			color: var(--text-dim);
+			font: inherit;
+			font-size: 13px;
+			cursor: pointer;
+			transition: background 0.15s ease, color 0.15s ease;
+		}
+
+		.segmented button:hover {
+			color: var(--text);
+		}
+
+		.segmented button.active {
+			background: var(--surface);
+			color: var(--text);
+			box-shadow: inset 0 0 0 1px var(--border);
+		}
+
+		button:focus-visible,
+		a:focus-visible {
+			outline: 2px solid var(--link);
+			outline-offset: 2px;
+		}
+
+		#summary {
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			padding: 5px 12px;
+			border: 1px solid var(--border);
+			border-radius: 999px;
+			font-size: 13px;
+			color: var(--text-dim);
+		}
+
+		#summary.done.ok {
+			color: var(--pass);
+			border-color: var(--pass);
+			background: var(--pass-dim);
+		}
+
+		#summary.done.bad {
+			color: var(--fail);
+			border-color: var(--fail);
+			background: var(--fail-dim);
+		}
+
+		#grid {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 16px;
+		}
+
+		.case {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			padding: 12px;
+			border: 1px solid var(--border);
+			border-radius: 10px;
+			background: var(--surface);
+		}
+
+		.case header {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 13px;
+		}
+
+		.case header a {
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			margin-left: auto;
+			color: var(--link);
+			text-decoration: none;
+			font-size: 12px;
+		}
+
+		.case header a:hover {
+			text-decoration: underline;
+		}
+
+		.badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			padding: 2px 10px;
+			border-radius: 999px;
+			font-size: 11px;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			color: var(--text-dim);
+			background: var(--surface-deep);
+		}
+
+		.badge.pass {
+			color: var(--pass);
+			background: var(--pass-dim);
+		}
+
+		.badge.fail {
+			color: var(--fail);
+			background: var(--fail-dim);
+		}
+
+		.params {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			padding: 6px 8px;
+			border-radius: 6px;
+			background: var(--surface-deep);
+		}
+
+		.params code {
+			flex: 1;
+			font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+			font-size: 11px;
+			line-height: 1.5;
+			color: #C9D1D9;
+			user-select: all;
+			overflow-wrap: anywhere;
+		}
+
+		.copy {
+			flex-shrink: 0;
+			display: inline-flex;
+			padding: 4px;
+			border: 0;
+			border-radius: 4px;
+			background: transparent;
+			color: var(--text-dim);
+			cursor: pointer;
+			transition: color 0.15s ease, background 0.15s ease;
+		}
+
+		.copy:hover {
+			color: var(--text);
+			background: var(--border);
+		}
+
+		.copy.copied {
+			color: var(--pass);
+		}
+
+		.case iframe {
+			border: 1px solid var(--border);
+			border-radius: 6px;
+			background: #000;
+		}
+
+		.failures {
+			margin: 0;
+			padding-left: 18px;
+			font-size: 12px;
+			line-height: 1.5;
+			color: #FCA5A5;
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			* {
+				transition: none !important;
+			}
+		}
+	</style>
+</head>
+<body>
+	<h1>ILIP template test bench</h1>
+	<p class="subtitle">Renders <code>default_template.html</code> with the real <code>runtime.js</code> and a fake engine, then checks progress bar visibility and position in every fit &times; placement combination.</p>
+	<div id="toolbar">
+		<div class="segmented" role="group" aria-label="Preview orientation">
+			<button id="mode-portrait">Mobile &middot; portrait</button>
+			<button id="mode-landscape">Desktop &middot; landscape</button>
+		</div>
+		<span id="summary">Running&hellip;</span>
+	</div>
+	<div id="grid"></div>
+	<script>
+		"use strict";
+
+		// Each entry is the exact `parameters` dictionary a case runs with —
+		// shown as JSON on the card so it can be copied into an export preset.
+		var CASES = [
+			{ fit: "centered", progress_placement: "below" },
+			{ fit: "cover", progress_placement: "below" },
+			{ fit: "cover", progress_placement: "bottom" },
+			{ fit: "cover", progress_placement: "top" },
+			{ fit: "cover", progress_placement: "center" },
+			{ fit: "contain", progress_placement: "below" },
+			{ fit: "contain", progress_placement: "bottom" },
+			{ fit: "contain", progress_placement: "top" },
+			{ fit: "centered", progress_placement: "bottom" },
+			{ fit: "centered", progress_placement: "below", progress_hidden: true }
+		];
+
+		var MODES = {
+			portrait: { width: 280, height: 500 },
+			landscape: { width: 480, height: 270 }
+		};
+
+		var COPY_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+		var CHECK_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+		var OPEN_ICON = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>';
+
+		function caseUrl(params) {
+			var query = new URLSearchParams();
+
+			Object.keys(params).forEach(function (key) {
+				query.set(key, String(params[key]));
+			});
+
+			return "case.html?" + query.toString();
+		}
+
+		function px(value) {
+			return Math.round(value * 10) / 10 + "px";
+		}
+
+		function describe(node) {
+			var id = node.id ? "#" + node.id : "";
+			return "<" + node.tagName.toLowerCase() + id + ">";
+		}
+
+		function collectFailures(win, params) {
+			var doc = win.document;
+			var failures = [];
+			var track = doc.getElementById("ilip-track");
+
+			if (!track) {
+				return ["#ilip-track is missing from the DOM"];
+			}
+
+			var display = win.getComputedStyle(track).display;
+
+			if (params.progress_hidden) {
+				if (display !== "none") {
+					failures.push("progress_hidden is true but the bar is visible (display: " + display + ")");
+				}
+
+				return failures;
+			}
+
+			if (display === "none") {
+				return ["bar is hidden (display: none) even though progress_hidden is false"];
+			}
+
+			var rect = track.getBoundingClientRect();
+			var vw = win.innerWidth;
+			var vh = win.innerHeight;
+
+			if (rect.width <= 0 || rect.height <= 0) {
+				failures.push("track has zero size");
+			}
+
+			if (rect.top < 0 || rect.left < 0 || rect.bottom > vh || rect.right > vw) {
+				failures.push("track overflows the viewport (top " + Math.round(rect.top) +
+					", bottom " + Math.round(rect.bottom) + ", viewport height " + vh + ")");
+			}
+
+			var root = doc.getElementById("ilip");
+			var progress = parseFloat(root ? root.style.getPropertyValue("--ilip-progress") : "");
+
+			if (!(progress > 0)) {
+				failures.push("progress never updates (--ilip-progress = " +
+					(root ? root.style.getPropertyValue("--ilip-progress") || "empty" : "no #ilip") + ")");
+			}
+
+			var fill = doc.getElementById("ilip-fill");
+
+			if (!fill || fill.getBoundingClientRect().width <= 0) {
+				failures.push("#ilip-fill stays empty");
+			}
+
+			var cx = rect.left + rect.width / 2;
+			var cy = rect.top + rect.height / 2;
+			var hit = doc.elementFromPoint(cx, cy);
+
+			if (hit && hit !== track && !track.contains(hit)) {
+				failures.push("track center is covered by " + describe(hit));
+			}
+
+			// top/bottom mean "pinned to the page edge": the gap between the
+			// track and the edge must stay within a small padding.
+			var pinLimit = Math.max(16, vh * 0.03);
+
+			switch (params.progress_placement) {
+				case "top":
+					if (rect.top > pinLimit) {
+						failures.push("top: track is not pinned to the top edge (gap " +
+							px(rect.top) + ", allowed " + px(pinLimit) + ")");
+					}
+					break;
+				case "center":
+					if (Math.abs(cy - vh / 2) > 10) {
+						failures.push("center: track center is at " + Math.round(cy) +
+							", expected " + Math.round(vh / 2));
+					}
+					break;
+				case "bottom":
+					if (vh - rect.bottom > pinLimit) {
+						failures.push("bottom: track is not pinned to the bottom edge (gap " +
+							px(vh - rect.bottom) + ", allowed " + px(pinLimit) + ")");
+					}
+					break;
+				case "below":
+					if (params.fit === "cover" || params.fit === "contain") {
+						if (!(cy > vh / 2 + 5)) {
+							failures.push("below + " + params.fit + ": track should sit below the vertical center, but its center is at " +
+								Math.round(cy) + " of " + vh);
+						}
+					} else {
+						var art = doc.getElementById("ilip-art");
+
+						if (art && rect.top <= art.getBoundingClientRect().bottom) {
+							failures.push("below: track is not below the logo");
+						}
+					}
+					break;
+			}
+
+			return failures;
+		}
+
+		function waitForProgress(win, params, timeoutMs) {
+			return new Promise(function (resolve) {
+				var started = performance.now();
+				var timer = setInterval(function () {
+					var doc = win.document;
+					var root = doc && doc.getElementById("ilip");
+					var track = doc && doc.getElementById("ilip-track");
+					var ready = params.progress_hidden
+						? Boolean(track)
+						: Boolean(root) && parseFloat(root.style.getPropertyValue("--ilip-progress")) > 0;
+
+					if (ready || performance.now() - started > timeoutMs) {
+						clearInterval(timer);
+						resolve();
+					}
+				}, 100);
+			});
+		}
+
+		function runCase(params, cell) {
+			return new Promise(function (resolve) {
+				var iframe = cell.querySelector("iframe");
+				iframe.addEventListener("load", function () {
+					waitForProgress(iframe.contentWindow, params, 5000).then(function () {
+						var failures;
+
+						try {
+							failures = collectFailures(iframe.contentWindow, params);
+						} catch (error) {
+							failures = ["check failed to run: " + error.message];
+						}
+
+						var badge = cell.querySelector(".badge");
+						badge.textContent = failures.length ? "FAIL" : "PASS";
+						badge.classList.add(failures.length ? "fail" : "pass");
+
+						if (failures.length) {
+							var list = document.createElement("ul");
+							list.className = "failures";
+							failures.forEach(function (text) {
+								var item = document.createElement("li");
+								item.textContent = text;
+								list.appendChild(item);
+							});
+							cell.appendChild(list);
+						}
+
+						resolve(failures.length === 0);
+					});
+				});
+			});
+		}
+
+		var grid = document.getElementById("grid");
+		var summary = document.getElementById("summary");
+		var buttons = {
+			portrait: document.getElementById("mode-portrait"),
+			landscape: document.getElementById("mode-landscape")
+		};
+
+		function render(mode) {
+			Object.keys(buttons).forEach(function (key) {
+				buttons[key].classList.toggle("active", key === mode);
+			});
+			grid.textContent = "";
+			summary.textContent = "Running…";
+			summary.className = "";
+
+			var size = MODES[mode];
+			var runs = CASES.map(function (params) {
+				var url = caseUrl(params);
+				var json = JSON.stringify(params, null, 1).replace(/\n\s*/g, " ");
+
+				var cell = document.createElement("div");
+				cell.className = "case";
+				cell.style.width = size.width + 26 + "px";
+
+				var header = document.createElement("header");
+				var badge = document.createElement("span");
+				badge.className = "badge";
+				badge.textContent = "…";
+				var link = document.createElement("a");
+				link.href = url;
+				link.target = "_blank";
+				link.innerHTML = OPEN_ICON + " Open full size";
+				header.append(badge, link);
+
+				var paramsRow = document.createElement("div");
+				paramsRow.className = "params";
+				var code = document.createElement("code");
+				code.textContent = json;
+				var copy = document.createElement("button");
+				copy.className = "copy";
+				copy.type = "button";
+				copy.title = "Copy parameters";
+				copy.setAttribute("aria-label", "Copy parameters");
+				copy.innerHTML = COPY_ICON;
+				copy.addEventListener("click", function () {
+					navigator.clipboard.writeText(json).then(function () {
+						copy.classList.add("copied");
+						copy.innerHTML = CHECK_ICON;
+						setTimeout(function () {
+							copy.classList.remove("copied");
+							copy.innerHTML = COPY_ICON;
+						}, 1200);
+					});
+				});
+				paramsRow.append(code, copy);
+
+				var iframe = document.createElement("iframe");
+				iframe.src = url;
+				iframe.width = size.width;
+				iframe.height = size.height;
+				iframe.setAttribute("title", json);
+
+				cell.append(header, paramsRow, iframe);
+				grid.appendChild(cell);
+
+				return runCase(params, cell);
+			});
+
+			Promise.all(runs).then(function (results) {
+				var passed = results.filter(Boolean).length;
+				summary.textContent = passed + " of " + results.length + " cases passed";
+				summary.classList.add("done", passed === results.length ? "ok" : "bad");
+			});
+		}
+
+		buttons.portrait.addEventListener("click", function () { render("portrait"); });
+		buttons.landscape.addEventListener("click", function () { render("landscape"); });
+
+		var initialMode = new URLSearchParams(location.search).get("mode");
+		render(initialMode in MODES ? initialMode : "portrait");
+	</script>
+</body>
+</html>

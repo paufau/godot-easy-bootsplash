@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>ILIP case</title>
+	<style>
+		html, body {
+			margin: 0;
+			height: 100%;
+			overflow: hidden;
+		}
+
+		canvas {
+			display: block;
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			background: #111;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+	<script src="../addons/itch_loading_indicator_page/public/runtime.js"></script>
+	<script>
+		(async function () {
+			"use strict";
+
+			// Mirrors DEFAULT_PARAMETERS in classes/ilip_export_plugin.gd.
+			var DEFAULTS = {
+				background_color: "#5F5F5F",
+				fit: "centered",
+				progress_hidden: false,
+				progress_placement: "below",
+				progress_width: "min(50vw, 360px)",
+				progress_height: "10px",
+				progress_color: "#FF244A",
+				track_color: "rgba(255, 255, 255, 0.9)"
+			};
+
+			var query = new URLSearchParams(location.search);
+			var params = Object.assign({}, DEFAULTS);
+
+			query.forEach(function (value, key) {
+				if (key in DEFAULTS) {
+					params[key] = value;
+				}
+			});
+
+			var dismiss = query.get("dismiss") === "1";
+
+			window.ILIP.params = params;
+			window.__ilipCase = { params: params, dismiss: dismiss };
+
+			var tokens = Object.assign({
+				IMAGE_SRC: "../addons/itch_loading_indicator_page/assets/background.png",
+				ASSETS_DIR: "../addons/itch_loading_indicator_page/assets",
+				PROJECT_NAME: "ILIP test case"
+			}, params);
+
+			var response = await fetch("../addons/itch_loading_indicator_page/public/default_template.html");
+			var template = await response.text();
+			// Same substitution as classes/ilip_template_enricher.gd.
+			var fragment = template.replace(/\{\{(\w+)\}\}/g, function (match, key) {
+				return key in tokens ? String(tokens[key]) : match;
+			});
+
+			// The export plugin injects the fragment right before <canvas>.
+			document.getElementById("canvas").insertAdjacentHTML("beforebegin", fragment);
+
+			// runtime.js hydrates [data-src] on DOMContentLoaded, which fired before
+			// the fragment existed — promote it here instead.
+			var art = document.querySelector("#ilip [data-src]");
+
+			if (art) {
+				art.setAttribute("src", art.getAttribute("data-src"));
+			}
+
+			function FakeEngine() {}
+
+			FakeEngine.prototype.startGame = function (config) {
+				var onProgress = (config && config.onProgress) || function () {};
+
+				return new Promise(function (resolve) {
+					var loaded = 0;
+					var total = 100;
+					var timer = setInterval(function () {
+						loaded += 2;
+
+						if (loaded >= total) {
+							if (dismiss) {
+								clearInterval(timer);
+								onProgress(total, total);
+								resolve();
+								return;
+							}
+
+							loaded = 2;
+						}
+
+						onProgress(loaded, total);
+					}, 100);
+				});
+			};
+
+			// Assigning triggers runtime.js's Engine setter hook, so the real
+			// onProgress wrapping is exercised.
+			window.Engine = FakeEngine;
+			new window.Engine().startGame({});
+		})();
+	</script>
+</body>
+</html>
