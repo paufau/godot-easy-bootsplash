@@ -13,6 +13,8 @@
 	var DONE_CLASS = "is-done";
 	var SMOOTH_CLASS = "is-smooth";
 	var MAX_TICK_MS = 100;
+	var SETTLE_EPSILON = 0.0005;
+	var CLOSE_90_TAUS = Math.log(10);
 
 	var progressHandlers = [];
 	var doneHandlers = [];
@@ -29,6 +31,7 @@
 	var pendingDismiss = false;
 	var failedFinish = false;
 	var floorRatio = 0;
+	var dismissCeiling = 0;
 
 	function findRoot() {
 		if (root === null) {
@@ -66,7 +69,9 @@
 	}
 
 	function targetRatio() {
-		return Math.max(ratio, floorRatio);
+		var value = Math.max(ratio, floorRatio);
+
+		return pendingDismiss ? Math.min(value, dismissCeiling) : value;
 	}
 
 	function tick(now) {
@@ -76,10 +81,24 @@
 		}
 
 		var target = targetRatio();
+		var ms = smoothingMs();
 		var dt = Math.min(Math.max(now - lastTick, 0), MAX_TICK_MS);
 
 		lastTick = now;
-		displayed = Math.min(target, displayed + dt / smoothingMs());
+
+		if (target <= displayed || !(ms > 0)) {
+			displayed = target;
+		} else {
+			var gap = target - displayed;
+			var step = gap * (1 - Math.exp(-dt * CLOSE_90_TAUS / ms));
+
+			if (pendingDismiss) {
+				step = Math.max(step, dt / ms);
+			}
+
+			displayed = gap - step < SETTLE_EPSILON ? target : displayed + step;
+		}
+
 		render(displayed);
 
 		if (displayed < target) {
@@ -141,6 +160,7 @@
 
 		if (displayed < targetRatio()) {
 			if (smoothingMs() > 0) {
+				dismissCeiling = targetRatio();
 				pendingDismiss = true;
 				animate();
 				return;

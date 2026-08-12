@@ -269,6 +269,7 @@
 			{ fit: "contain", progress_placement: "top" },
 			{ fit: "centered", progress_placement: "bottom" },
 			{ fit: "cover", progress_placement: "bottom", progress_width: "100vw", progress_height: "12px", progress_radius: "0", progress_margin: "0" },
+			{ fit: "centered", progress_placement: "bottom", progress_width: "100vw", progress_height: "12px", progress_radius: "0", progress_margin: "0" },
 			{ fit: "centered", progress_placement: "below", progress_hidden: true },
 			{ fit: "centered", progress_placement: "below", progress_smoothing_ms: 3000, hide_awaits_full_progress: true, hideAt: 20, dismiss: 1 },
 			{ fit: "centered", progress_placement: "below", progress_smoothing_ms: 3000, hide_awaits_full_progress: false, hideAt: 20, dismiss: 1 },
@@ -317,35 +318,30 @@
 			return "<" + node.tagName.toLowerCase() + id + ">";
 		}
 
-		// A custom template can drop the bar and let the artwork draw itself
-		// instead. Each stroke is a single dash whose length is the progress,
-		// pinned at --ebs-line-from and growing back by --ebs-line-span, and
-		// it has to stay inside the artwork's viewBox the whole way.
-		var ACCENT_LINES = ["ebs-line-blue", "ebs-line-orange"];
-		var ACCENT_VIEWBOX = { width: 1920, height: 1080 };
+		// A template can drop the bar and let the artwork draw itself instead:
+		// any .ebs-line is a single dash whose length is the progress, pinned
+		// at --ebs-line-from and growing back by --ebs-line-span, and it has to
+		// stay inside its own viewBox the whole way.
+
+		// Computed values can arrive still wrapped: "calc(-1115.52px)".
+		function cssLength(value) {
+			return parseFloat(String(value).replace("calc(", ""));
+		}
 
 		function collectAccentFailures(win, displayed) {
-			var doc = win.document;
 			var failures = [];
 
-			ACCENT_LINES.forEach(function (id) {
-				var line = doc.getElementById(id);
-
-				if (!line) {
-					failures.push("#" + id + " is missing from the DOM");
-					return;
-				}
-
+			Array.prototype.forEach.call(win.document.querySelectorAll(".ebs-line"), function (line) {
+				var id = "#" + (line.id || "(unnamed .ebs-line)");
+				var box = line.ownerSVGElement.viewBox.baseVal;
 				var style = win.getComputedStyle(line);
 				var length = line.getTotalLength();
-				var from = parseFloat(style.getPropertyValue("--ebs-line-from"));
-				var span = parseFloat(style.getPropertyValue("--ebs-line-span"));
-				var pattern = style.strokeDasharray.split(/[\s,]+/).map(function (part) {
-					return parseFloat(part);
-				});
+				var from = cssLength(style.getPropertyValue("--ebs-line-from"));
+				var span = cssLength(style.getPropertyValue("--ebs-line-span"));
+				var pattern = style.strokeDasharray.split(/[\s,]+/).map(cssLength);
 
 				if (pattern.length !== 2 || !(pattern[1] >= length)) {
-					failures.push("#" + id + " needs a dash plus a gap of at least its " +
+					failures.push(id + " needs a dash plus a gap of at least its " +
 						Math.round(length) + "-unit path, got \"" + style.strokeDasharray +
 						"\", so the pattern repeats");
 					return;
@@ -354,24 +350,22 @@
 				// The dash length IS the progress — this is what makes the
 				// stroke grow rather than merely move.
 				if (Math.abs(pattern[0] - span * displayed) > 1) {
-					failures.push("#" + id + " draws " + Math.round(pattern[0]) + " units at " +
+					failures.push(id + " draws " + Math.round(pattern[0]) + " units at " +
 						Math.round(displayed * 100) + "%, expected " + Math.round(span * displayed));
 					return;
 				}
 
-				// A calc() that only depends on custom properties stays
-				// unresolved in the computed value: "calc(-1115.52px)".
-				var start = -parseFloat(style.strokeDashoffset.replace("calc(", ""));
+				var start = -cssLength(style.strokeDashoffset);
 
 				if (isNaN(start) || Math.abs(start - (from - span * displayed)) > 1) {
-					failures.push("#" + id + " starts its dash at " + Math.round(start) +
+					failures.push(id + " starts its dash at " + Math.round(start) +
 						" at " + Math.round(displayed * 100) + "%, expected " +
 						Math.round(from - span * displayed) + " — the pinned end drifted");
 					return;
 				}
 
 				// Whatever the sampled instant happens to be, the mapping has
-				// to keep the drawing on screen the whole way — both paths run
+				// to keep the drawing on screen the whole way — the paths run
 				// far outside the frame at either end.
 				var edge = parseFloat(style.strokeWidth) / 2;
 
@@ -379,9 +373,9 @@
 					var at = step / 20;
 					var head = line.getPointAtLength(from - span * at);
 
-					if (head.x < -edge || head.x > ACCENT_VIEWBOX.width + edge ||
-						head.y < -edge || head.y > ACCENT_VIEWBOX.height + edge) {
-						failures.push("#" + id + " draws off-canvas at " + Math.round(at * 100) +
+					if (head.x < box.x - edge || head.x > box.x + box.width + edge ||
+						head.y < box.y - edge || head.y > box.y + box.height + edge) {
+						failures.push(id + " draws off-canvas at " + Math.round(at * 100) +
 							"% (" + Math.round(head.x) + ", " + Math.round(head.y) +
 							"), so that part of the load is invisible");
 						break;
@@ -394,10 +388,9 @@
 
 		function collectFailures(win, params) {
 			var doc = win.document;
-			var failures = [];
-			var track = doc.getElementById("ebs-track");
+			var root = doc.getElementById("ebs");
 
-			if (!track) {
+			if (!root) {
 				var caseError = doc.getElementById("case-error");
 
 				if (!caseError && win.__easyBootsplashCase && win.__easyBootsplashCase.overlayRemoved) {
@@ -406,26 +399,28 @@
 
 				return [caseError
 					? "case page crashed: " + caseError.textContent
-					: "#ebs-track is missing from the DOM"];
+					: "#ebs is missing from the DOM"];
 			}
 
-			var display = win.getComputedStyle(track).display;
-			var root = doc.getElementById("ebs");
-			var progress = parseFloat(root ? root.style.getPropertyValue("--ebs-progress") : "");
-
-			if (params.template) {
-				failures = failures.concat(collectAccentFailures(win, progress || 0));
-			}
+			var progress = parseFloat(root.style.getPropertyValue("--ebs-progress"));
+			var track = doc.getElementById("ebs-track");
+			var failures = collectAccentFailures(win, progress || 0);
 
 			if (params.progress_hidden) {
-				if (display !== "none") {
-					failures.push("progress_hidden is true but the bar is visible (display: " + display + ")");
+				// A template is free to leave the bar out rather than hide it.
+				if (track && win.getComputedStyle(track).display !== "none") {
+					failures.push("progress_hidden is true but the bar is visible");
 				}
 
 				return failures;
 			}
 
-			if (display === "none") {
+			if (!track) {
+				failures.push("#ebs-track is missing from the DOM");
+				return failures;
+			}
+
+			if (win.getComputedStyle(track).display === "none") {
 				return ["bar is hidden (display: none) even though progress_hidden is false"];
 			}
 
@@ -444,7 +439,7 @@
 
 			if (!(progress > 0)) {
 				failures.push("progress never updates (--ebs-progress = " +
-					(root ? root.style.getPropertyValue("--ebs-progress") || "empty" : "no #ebs") + ")");
+					(root.style.getPropertyValue("--ebs-progress") || "empty") + ")");
 			}
 
 			if (Number(params.progress_smoothing_ms) > 0) {
@@ -585,17 +580,13 @@
 			});
 		}
 
-		function waitForProgress(win, params, timeoutMs) {
+		function waitForProgress(win, timeoutMs) {
 			return pollUntil(function () {
-				var doc = win.document;
-				var root = doc && doc.getElementById("ebs");
-				var track = doc && doc.getElementById("ebs-track");
+				// runtime.js sets --ebs-progress on #ebs whatever the template
+				// renders, so this holds even when the bar is hidden.
+				var root = win.document && win.document.getElementById("ebs");
 
-				// A hidden bar has no progress to watch — unless the template
-				// animates something else off the same value.
-				return params.progress_hidden && !params.template
-					? Boolean(track)
-					: Boolean(root) && parseFloat(root.style.getPropertyValue("--ebs-progress")) > 0;
+				return Boolean(root) && parseFloat(root.style.getPropertyValue("--ebs-progress")) > 0;
 			}, timeoutMs);
 		}
 
@@ -630,7 +621,7 @@
 					}
 
 					checked = true;
-					waitForProgress(iframe.contentWindow, params, 5000).then(function () {
+					waitForProgress(iframe.contentWindow, 5000).then(function () {
 						var evaluate = function () {
 							try {
 								return collectFailures(iframe.contentWindow, params);

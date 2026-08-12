@@ -74,18 +74,12 @@
 		</g>
 		<defs>
 		<filter id="filter0_f_562_52526" x="1305.41" y="-476.593" width="810.186" height="2006.87" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-		<feFlood flood-opacity="0" result="BackgroundImageFix"/>
-		<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
 		<feGaussianBlur stdDeviation="17" result="effect1_foregroundBlur_562_52526"/>
 		</filter>
 		<filter id="filter1_f_562_52526" x="-964.592" y="473.407" width="2296.87" height="800.185" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-		<feFlood flood-opacity="0" result="BackgroundImageFix"/>
-		<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
 		<feGaussianBlur stdDeviation="17" result="effect1_foregroundBlur_562_52526"/>
 		</filter>
 		<filter id="filter2_f_562_52526" x="-227" y="-408" width="2435" height="1910" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-		<feFlood flood-opacity="0" result="BackgroundImageFix"/>
-		<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
 		<feGaussianBlur stdDeviation="200" result="effect1_foregroundBlur_562_52526"/>
 		</filter>
 		<!-- Both fades were re-aimed. In the static artwork orange fades out
@@ -107,19 +101,12 @@
 		</clipPath>
 		</defs>
 	</svg>
-	<div id="ebs-track" class="pos-{{progress_placement}} hidden-{{progress_hidden}}"><div id="ebs-fill"></div></div>
 </div>
 <style>
 	#ebs {
 		position: absolute;
 		inset: 0;
 		z-index: 3;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		--ebs-gap: 32px;
-		gap: var(--ebs-gap);
 		background: {{background_color}};
 		opacity: 1;
 		transition: opacity 0.35s ease-out;
@@ -179,49 +166,4 @@
 		--ebs-line-span: 1316px;
 	}
 
-	#ebs-track {
-		position: relative;
-		width: {{progress_width}};
-		height: {{progress_height}};
-		border-radius: {{progress_radius}};
-		overflow: hidden;
-		background: {{track_color}};
-		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12), 0 2px 12px rgba(0, 0, 0, 0.3);
-	}
-
-	#ebs-track.hidden-true {
-		display: none;
-	}
-
-	#ebs-track.pos-top {
-		position: absolute;
-		left: 50%;
-		transform: translateX(-50%);
-		top: {{progress_margin}};
-	}
-
-	#ebs-track.pos-center {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		transform: translate(-50%, -50%);
-	}
-
-	#ebs-track.pos-bottom {
-		position: absolute;
-		left: 50%;
-		transform: translateX(-50%);
-		bottom: {{progress_margin}};
-	}
-
-	#ebs-fill {
-		width: var(--ebs-progress-percent, 0%);
-		height: 100%;
-		background: {{progress_color}};
-		transition: width 0.2s linear;
-	}
-
-	#ebs.is-smooth #ebs-fill {
-		transition: none;
-	}
 </style>

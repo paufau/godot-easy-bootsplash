@@ -115,7 +115,7 @@ Two more keys are read by the runtime rather than the template:
 
 | Key                        | Default                                                                                                                                          |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `progress_smoothing_ms`    | `600`. Time in ms for a full 0→100% sweep; the bar glides toward the real progress at that constant speed instead of jumping, and the overlay waits for the animation to finish before fading out. `0` disables smoothing. On a load failure the bar snaps and the overlay closes immediately. |
+| `progress_smoothing_ms`    | `600`. Time to close 90% of the distance to the real progress, whatever that distance is. The bar follows instead of jumping, moving fast while it is far behind and easing off as it arrives, and the overlay waits for the animation to finish before fading out. Raise it for calmer motion at the cost of trailing further behind; lower it to track the loader more tightly. `0` disables smoothing, leaving the bar to step with the loader (a CSS transition in the template can smooth that instead). On a load failure the bar snaps and the overlay closes immediately. |
 | `hide_awaits_full_progress` | `false`. When `true`, `EBS.hide()` first drives the bar to 100% (animated when smoothing is on) and only then hides the overlay.                 |
 
 Feel free to add your own keys if you need to customize your own template
