@@ -152,6 +152,12 @@
 			text-decoration: underline;
 		}
 
+		.case header .template {
+			font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+			font-size: 11px;
+			color: var(--text-dim);
+		}
+
 		.badge {
 			display: inline-flex;
 			align-items: center;
@@ -265,10 +271,23 @@
 			{ fit: "cover", progress_placement: "bottom", progress_width: "100vw", progress_height: "12px", progress_radius: "0", progress_margin: "0" },
 			{ fit: "centered", progress_placement: "below", progress_hidden: true },
 			{ fit: "centered", progress_placement: "below", progress_smoothing_ms: 3000, hide_awaits_full_progress: true, hideAt: 20, dismiss: 1 },
-			{ fit: "centered", progress_placement: "below", progress_smoothing_ms: 3000, hide_awaits_full_progress: false, hideAt: 20, dismiss: 1 }
+			{ fit: "centered", progress_placement: "below", progress_smoothing_ms: 3000, hide_awaits_full_progress: false, hideAt: 20, dismiss: 1 },
+			// Custom template, default bar switched off: the artwork draws its
+			// own two accent strokes instead — blue running left-and-down,
+			// orange running right-and-up. This one never dismisses, so the
+			// engine keeps looping 0-100 and the sweep stays watchable; with a
+			// hideAt the card spent half its cycle showing finished strokes
+			// fading out, which reads as the lines retreating.
+			{
+				template: "special/15th-mile.html",
+				background_color: "#E1E1EB",
+				progress_hidden: true,
+				progress_smoothing_ms: 1200,
+				hide_awaits_full_progress: true
+			}
 		];
 
-		var CONTROL_KEYS = ["hideAt", "dismiss", "jump", "restart"];
+		var CONTROL_KEYS = ["hideAt", "dismiss", "jump", "restart", "template", "image"];
 
 		var MODES = {
 			portrait: { width: 280, height: 500 },
@@ -298,6 +317,81 @@
 			return "<" + node.tagName.toLowerCase() + id + ">";
 		}
 
+		// A custom template can drop the bar and let the artwork draw itself
+		// instead. Each stroke is a single dash whose length is the progress,
+		// pinned at --ebs-line-from and growing back by --ebs-line-span, and
+		// it has to stay inside the artwork's viewBox the whole way.
+		var ACCENT_LINES = ["ebs-line-blue", "ebs-line-orange"];
+		var ACCENT_VIEWBOX = { width: 1920, height: 1080 };
+
+		function collectAccentFailures(win, displayed) {
+			var doc = win.document;
+			var failures = [];
+
+			ACCENT_LINES.forEach(function (id) {
+				var line = doc.getElementById(id);
+
+				if (!line) {
+					failures.push("#" + id + " is missing from the DOM");
+					return;
+				}
+
+				var style = win.getComputedStyle(line);
+				var length = line.getTotalLength();
+				var from = parseFloat(style.getPropertyValue("--ebs-line-from"));
+				var span = parseFloat(style.getPropertyValue("--ebs-line-span"));
+				var pattern = style.strokeDasharray.split(/[\s,]+/).map(function (part) {
+					return parseFloat(part);
+				});
+
+				if (pattern.length !== 2 || !(pattern[1] >= length)) {
+					failures.push("#" + id + " needs a dash plus a gap of at least its " +
+						Math.round(length) + "-unit path, got \"" + style.strokeDasharray +
+						"\", so the pattern repeats");
+					return;
+				}
+
+				// The dash length IS the progress — this is what makes the
+				// stroke grow rather than merely move.
+				if (Math.abs(pattern[0] - span * displayed) > 1) {
+					failures.push("#" + id + " draws " + Math.round(pattern[0]) + " units at " +
+						Math.round(displayed * 100) + "%, expected " + Math.round(span * displayed));
+					return;
+				}
+
+				// A calc() that only depends on custom properties stays
+				// unresolved in the computed value: "calc(-1115.52px)".
+				var start = -parseFloat(style.strokeDashoffset.replace("calc(", ""));
+
+				if (isNaN(start) || Math.abs(start - (from - span * displayed)) > 1) {
+					failures.push("#" + id + " starts its dash at " + Math.round(start) +
+						" at " + Math.round(displayed * 100) + "%, expected " +
+						Math.round(from - span * displayed) + " — the pinned end drifted");
+					return;
+				}
+
+				// Whatever the sampled instant happens to be, the mapping has
+				// to keep the drawing on screen the whole way — both paths run
+				// far outside the frame at either end.
+				var edge = parseFloat(style.strokeWidth) / 2;
+
+				for (var step = 0; step <= 20; step++) {
+					var at = step / 20;
+					var head = line.getPointAtLength(from - span * at);
+
+					if (head.x < -edge || head.x > ACCENT_VIEWBOX.width + edge ||
+						head.y < -edge || head.y > ACCENT_VIEWBOX.height + edge) {
+						failures.push("#" + id + " draws off-canvas at " + Math.round(at * 100) +
+							"% (" + Math.round(head.x) + ", " + Math.round(head.y) +
+							"), so that part of the load is invisible");
+						break;
+					}
+				}
+			});
+
+			return failures;
+		}
+
 		function collectFailures(win, params) {
 			var doc = win.document;
 			var failures = [];
@@ -316,6 +410,12 @@
 			}
 
 			var display = win.getComputedStyle(track).display;
+			var root = doc.getElementById("ebs");
+			var progress = parseFloat(root ? root.style.getPropertyValue("--ebs-progress") : "");
+
+			if (params.template) {
+				failures = failures.concat(collectAccentFailures(win, progress || 0));
+			}
 
 			if (params.progress_hidden) {
 				if (display !== "none") {
@@ -341,9 +441,6 @@
 				failures.push("track overflows the viewport (top " + Math.round(rect.top) +
 					", bottom " + Math.round(rect.bottom) + ", viewport height " + vh + ")");
 			}
-
-			var root = doc.getElementById("ebs");
-			var progress = parseFloat(root ? root.style.getPropertyValue("--ebs-progress") : "");
 
 			if (!(progress > 0)) {
 				failures.push("progress never updates (--ebs-progress = " +
@@ -494,7 +591,9 @@
 				var root = doc && doc.getElementById("ebs");
 				var track = doc && doc.getElementById("ebs-track");
 
-				return params.progress_hidden
+				// A hidden bar has no progress to watch — unless the template
+				// animates something else off the same value.
+				return params.progress_hidden && !params.template
 					? Boolean(track)
 					: Boolean(root) && parseFloat(root.style.getPropertyValue("--ebs-progress")) > 0;
 			}, timeoutMs);
@@ -598,6 +697,13 @@
 				link.target = "_blank";
 				link.innerHTML = OPEN_ICON + " Open full size";
 				header.append(badge, link);
+
+				if (params.template) {
+					var template = document.createElement("span");
+					template.className = "template";
+					template.textContent = params.template;
+					header.insertBefore(template, link);
+				}
 
 				var paramsRow = document.createElement("div");
 				paramsRow.className = "params";

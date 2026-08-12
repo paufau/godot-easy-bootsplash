@@ -156,15 +156,19 @@
 			}, 50);
 
 			var tokens = Object.assign({
-				IMAGE_SRC: "../addons/easy_bootsplash/assets/background.png",
+				IMAGE_SRC: query.get("image") || "../addons/easy_bootsplash/assets/background.png",
 				ASSETS_DIR: "../addons/easy_bootsplash/assets",
 				PROJECT_NAME: "Easy Bootsplash test case"
 			}, params);
 
-			var response = await fetch("../addons/easy_bootsplash/public/default_template.html");
+			// `template` mirrors the ebs/template export option: any path
+			// relative to this page, so custom templates can be tried out too.
+			var templatePath = query.get("template") ||
+				"../addons/easy_bootsplash/public/default_template.html";
+			var response = await fetch(templatePath);
 
 			if (!response.ok) {
-				throw new Error("template fetch failed: HTTP " + response.status +
+				throw new Error("template fetch failed: HTTP " + response.status + " for " + templatePath +
 					" — serve the repository root (python3 test/serve.py), not the test/ folder");
 			}
 
