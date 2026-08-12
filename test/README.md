@@ -14,7 +14,7 @@ python3 test/serve.py
 
 - `dismiss=1` — the fake engine finishes at 100% instead of looping forever
 - `jump=1` — ramp to 20%, stall for a beat, then report 100% in one step
-- `hideAt=20` — call `window.ILIP.hide()` once loading passes 20%
+- `hideAt=20` — call `window.EBS.hide()` once loading passes 20%
 - `restart=0` — do not reload the page after the overlay is removed (by
   default a finished case pauses on the lamps for a moment and starts over)
 

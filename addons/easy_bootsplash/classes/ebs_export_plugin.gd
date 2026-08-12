@@ -1,19 +1,19 @@
 @tool
-class_name ILIPExportPlugin
+class_name EBSExportPlugin
 extends EditorExportPlugin
 
-# Which files the addon wants; ILIPPaths decides where they live.
+# Which files the addon wants; EBSPaths decides where they live.
 const TEMPLATE_NAME := "default_template.html"
 const RUNTIME_NAME := "runtime.js"
 
 # Godot names its own web output index.*, so the copy gets a name of its own.
-const ASSETS_DIRNAME := "ilip_assets"
+const ASSETS_DIRNAME := "ebs_assets"
 
-const OPTION_ENABLED := "itch_loading_indicator_page/enabled"
-const OPTION_DISMISS := "itch_loading_indicator_page/dismiss"
-const OPTION_TEMPLATE := "itch_loading_indicator_page/template"
-const OPTION_PARAMETERS := "itch_loading_indicator_page/parameters"
-const OPTION_ASSETS := "itch_loading_indicator_page/assets"
+const OPTION_ENABLED := "ebs/enabled"
+const OPTION_DISMISS := "ebs/dismiss"
+const OPTION_TEMPLATE := "ebs/template"
+const OPTION_PARAMETERS := "ebs/parameters"
+const OPTION_ASSETS := "ebs/assets"
 
 const BACKGROUND_BASENAME := "background"
 const IMAGE_EXTENSIONS: PackedStringArray = ["gif", "png", "webp", "jpg", "jpeg", "avif", "svg"]
@@ -39,7 +39,7 @@ var _html_path := ""
 
 
 func _get_name() -> String:
-	return "Itch Loading Indicator Page"
+	return "Easy Bootsplash"
 
 
 func _supports_platform(platform: EditorExportPlatform) -> bool:
@@ -74,7 +74,7 @@ func _get_export_options(platform: EditorExportPlatform) -> Array[Dictionary]:
 				"hint": PROPERTY_HINT_FILE,
 				"hint_string": "*.html,*.htm"
 			},
-			"default_value": ILIPPaths.get_public_path(TEMPLATE_NAME)
+			"default_value": EBSPaths.get_public_path(TEMPLATE_NAME)
 		},
 		{
 			"option": {
@@ -89,14 +89,14 @@ func _get_export_options(platform: EditorExportPlatform) -> Array[Dictionary]:
 				"type": TYPE_STRING,
 				"hint": PROPERTY_HINT_DIR
 			},
-			"default_value": ILIPPaths.get_assets_path()
+			"default_value": EBSPaths.get_assets_path()
 		}
 	]
 
 
 func _export_begin(features: PackedStringArray, _is_debug: bool, path: String, _flags: int) -> void:
 	var exports_shell := HTML_EXTENSIONS.has(path.get_extension().to_lower())
-	_html_path = ILIPPaths.get_absolute_path(path) if features.has("web") and exports_shell else ""
+	_html_path = EBSPaths.get_absolute_path(path) if features.has("web") and exports_shell else ""
 
 
 func _export_end() -> void:
@@ -106,26 +106,26 @@ func _export_end() -> void:
 	if html_path.is_empty() or not bool(get_option(OPTION_ENABLED)):
 		return
 
-	var runtime := FileAccess.get_file_as_string(ILIPPaths.get_public_absolute_path(RUNTIME_NAME))
+	var runtime := FileAccess.get_file_as_string(EBSPaths.get_public_absolute_path(RUNTIME_NAME))
 
 	if runtime.is_empty():
-		push_error("ILIP: %s is missing, the loading screen was skipped." % RUNTIME_NAME)
+		push_error("EBS: %s is missing, the loading screen was skipped." % RUNTIME_NAME)
 		return
 
 	var template_path := _get_template_path()
 	var template := FileAccess.get_file_as_string(template_path)
 
 	if template.is_empty():
-		push_error("ILIP: cannot read %s, the loading screen was skipped." % template_path)
+		push_error("EBS: cannot read %s, the loading screen was skipped." % template_path)
 		return
 
-	var output := ILIPOutput.new(html_path.get_base_dir())
+	var output := EBSOutput.new(html_path.get_base_dir())
 	var parameters := _get_parameters()
 	var values := _get_tokens(_copy_assets(output))
 
 	values.merge(parameters, true)
 
-	var body := ILIPTemplateEnricher.render(template, values)
+	var body := EBSTemplateEnricher.render(template, values)
 
 	output.inject(html_path, runtime, parameters, body, _get_dismiss_mode())
 
@@ -141,7 +141,7 @@ func _get_declared_parameters() -> Dictionary:
 	var declared: Variant = get_option(OPTION_PARAMETERS)
 
 	if not declared is Dictionary:
-		push_warning("ILIP: %s holds no Dictionary, no parameters were passed." % OPTION_PARAMETERS)
+		push_warning("EBS: %s holds no Dictionary, no parameters were passed." % OPTION_PARAMETERS)
 		return {}
 
 	return declared
@@ -155,14 +155,14 @@ func _get_tokens(assets_dirname: String) -> Dictionary:
 	}
 
 
-func _copy_assets(output: ILIPOutput) -> String:
+func _copy_assets(output: EBSOutput) -> String:
 	var source := _get_assets_source()
 
 	if source.is_empty():
 		return ""
 
 	if not DirAccess.dir_exists_absolute(source):
-		push_warning("ILIP: %s not found, no assets were copied." % source)
+		push_warning("EBS: %s not found, no assets were copied." % source)
 		return ""
 
 	return output.copy_tree(source, ASSETS_DIRNAME)
@@ -187,9 +187,9 @@ func _find_background(assets_dirname: String) -> String:
 
 func _get_dismiss_mode() -> String:
 	var modes := [
-		ILIP.DISMISS_ON_ENGINE_LOAD,
-		ILIP.DISMISS_AFTER_FIRST_FRAME_DRAWN,
-		ILIP.DISMISS_MANUALLY
+		EBS.DISMISS_ON_ENGINE_LOAD,
+		EBS.DISMISS_AFTER_FIRST_FRAME_DRAWN,
+		EBS.DISMISS_MANUALLY
 	]
 	var selected := clampi(int(get_option(OPTION_DISMISS)), 0, modes.size() - 1)
 
@@ -198,19 +198,19 @@ func _get_dismiss_mode() -> String:
 
 func _get_assets_source() -> String:
 	var selected := str(get_option(OPTION_ASSETS)).strip_edges()
-	return "" if selected.is_empty() else ILIPPaths.get_absolute_path(selected)
+	return "" if selected.is_empty() else EBSPaths.get_absolute_path(selected)
 
 
 func _get_template_path() -> String:
 	var selected := str(get_option(OPTION_TEMPLATE)).strip_edges()
 
 	if selected.is_empty():
-		return ILIPPaths.get_public_absolute_path(TEMPLATE_NAME)
+		return EBSPaths.get_public_absolute_path(TEMPLATE_NAME)
 
-	var absolute := ILIPPaths.get_absolute_path(selected)
+	var absolute := EBSPaths.get_absolute_path(selected)
 
 	if not FileAccess.file_exists(absolute):
-		push_warning("ILIP: %s not found, the built-in template was used instead." % selected)
-		return ILIPPaths.get_public_absolute_path(TEMPLATE_NAME)
+		push_warning("EBS: %s not found, the built-in template was used instead." % selected)
+		return EBSPaths.get_public_absolute_path(TEMPLATE_NAME)
 
 	return absolute

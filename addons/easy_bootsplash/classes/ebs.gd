@@ -1,15 +1,15 @@
 ## Game-side access to the loading overlay and to the parameters that were
 ## passed to it at export time.
-class_name ILIP
+class_name EBS
 extends RefCounted
 
 const DISMISS_ON_ENGINE_LOAD := "on-engine-load"
 const DISMISS_AFTER_FIRST_FRAME_DRAWN := "after-first-frame-drawn"
 const DISMISS_MANUALLY := "manually"
 
-const _PARAMS_EXPRESSION := "JSON.stringify((window.ILIP && window.ILIP.params) || {})"
-const _MODE_EXPRESSION := "(window.ILIP && window.ILIP.mode) || \"on-engine-load\""
-const _HIDE_EXPRESSION := "window.ILIP && window.ILIP.hide()"
+const _PARAMS_EXPRESSION := "JSON.stringify((window.EBS && window.EBS.params) || {})"
+const _MODE_EXPRESSION := "(window.EBS && window.EBS.mode) || \"on-engine-load\""
+const _HIDE_EXPRESSION := "window.EBS && window.EBS.hide()"
 
 static var _params: Dictionary = {}
 static var _params_loaded := false

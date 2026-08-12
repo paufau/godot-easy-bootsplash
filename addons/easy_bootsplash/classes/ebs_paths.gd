@@ -1,4 +1,4 @@
-class_name ILIPPaths
+class_name EBSPaths
 extends RefCounted
 
 const PUBLIC_DIR := "public"
@@ -13,12 +13,12 @@ static func get_addon_root() -> String:
 	if not _root.is_empty():
 		return _root
 
-	var script: Script = ILIPPaths
+	var script: Script = EBSPaths
 
 	_root = script.resource_path.get_base_dir().get_base_dir()
 
 	if not FileAccess.file_exists(_root.path_join(ROOT_MARKER)):
-		push_error("ILIP: %s holds no %s, so %s is not where it is expected to be." % [
+		push_error("EBS: %s holds no %s, so %s is not where it is expected to be." % [
 			_root,
 			ROOT_MARKER,
 			script.resource_path

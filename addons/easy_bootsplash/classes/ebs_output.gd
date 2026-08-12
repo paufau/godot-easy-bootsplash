@@ -1,5 +1,5 @@
 ## Writes the loading screen into a finished web export.
-class_name ILIPOutput
+class_name EBSOutput
 extends RefCounted
 
 # MinimizeHTMLBuild and friends may run first and strip quotes and optional tags,
@@ -18,7 +18,7 @@ func copy_tree(source: String, subdirectory: String) -> String:
 	var destination := directory.path_join(subdirectory)
 
 	if (destination.simplify_path() + "/").begins_with(source.simplify_path() + "/"):
-		push_error("ILIP: %s contains the export directory, so no assets were copied." % source)
+		push_error("EBS: %s contains the export directory, so no assets were copied." % source)
 		return ""
 
 	# Delete everything to remove stale files and re-export new files
@@ -32,7 +32,7 @@ func copy_tree(source: String, subdirectory: String) -> String:
 
 static func _remove_tree(path: String) -> void:
 	if not path.is_absolute_path():
-		push_error("ILIP: refusing to clear %s, which is not an absolute path." % path)
+		push_error("EBS: refusing to clear %s, which is not an absolute path." % path)
 		return
 
 	var dir := DirAccess.open(path)
@@ -53,13 +53,13 @@ func _copy_tree(source: String, target: String) -> bool:
 	var error := DirAccess.make_dir_recursive_absolute(target)
 
 	if error != OK:
-		push_error("ILIP: cannot create %s (error %d)." % [target, error])
+		push_error("EBS: cannot create %s (error %d)." % [target, error])
 		return false
 
 	var dir := DirAccess.open(source)
 
 	if dir == null:
-		push_error("ILIP: cannot read %s." % source)
+		push_error("EBS: cannot read %s." % source)
 		return false
 
 	for name in dir.get_directories():
@@ -77,7 +77,7 @@ func _copy_tree(source: String, target: String) -> bool:
 		error = DirAccess.copy_absolute(source.path_join(name), target.path_join(name))
 
 		if error != OK:
-			push_error("ILIP: failed to copy %s (error %d)." % [source.path_join(name), error])
+			push_error("EBS: failed to copy %s (error %d)." % [source.path_join(name), error])
 			return false
 
 	return true
@@ -87,7 +87,7 @@ func inject(html_path: String, runtime: String, parameters: Dictionary, body: St
 	var html := FileAccess.get_file_as_string(html_path)
 
 	if html.is_empty():
-		push_error("ILIP: cannot read %s." % html_path)
+		push_error("EBS: cannot read %s." % html_path)
 		return false
 
 	for anchor in ANCHORS:
@@ -98,7 +98,7 @@ func inject(html_path: String, runtime: String, parameters: Dictionary, body: St
 			return true
 
 	push_error(
-		"ILIP: none of %s were found in %s, the loading screen was skipped. A custom HTML shell has to keep one of them."
+		"EBS: none of %s were found in %s, the loading screen was skipped. A custom HTML shell has to keep one of them."
 		% [", ".join(ANCHORS), html_path]
 	)
 
@@ -109,7 +109,7 @@ static func write(path: String, content: String) -> void:
 	var file := FileAccess.open(path, FileAccess.WRITE)
 
 	if file == null:
-		push_error("ILIP: cannot write %s." % path)
+		push_error("EBS: cannot write %s." % path)
 		return
 
 	file.store_string(content)
@@ -120,10 +120,10 @@ static func write(path: String, content: String) -> void:
 func _get_payload(runtime: String, parameters: Dictionary, body: String, mode: String) -> String:
 	var config := ""
 
-	if mode != ILIP.DISMISS_ON_ENGINE_LOAD:
-		config = "window.ILIP.mode=%s;" % _get_js_string(mode)
+	if mode != EBS.DISMISS_ON_ENGINE_LOAD:
+		config = "window.EBS.mode=%s;" % _get_js_string(mode)
 
-	return "<script>\n%s</script>\n<script>window.ILIP.params=JSON.parse(%s);%s</script>\n%s\n" % [
+	return "<script>\n%s</script>\n<script>window.EBS.params=JSON.parse(%s);%s</script>\n%s\n" % [
 		runtime,
 		_get_js_string(JSON.stringify(parameters)),
 		config,

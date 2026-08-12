@@ -1,13 +1,13 @@
-# Itch Loading Indicator Page
+# Easy Bootsplash
 
 ![Static Badge](https://img.shields.io/badge/engine-Godot_4.x-478CBF)
 ![Static Badge](https://img.shields.io/badge/platform-Web-7a34eb)
 ![Static Badge](https://img.shields.io/badge/shell-untouched-81B622)
 
-A loading screen for Godot web exports that covers game download. Made specifically for itch.io
+A loading screen for Godot web exports that covers the game download. Built with itch.io in mind, works on any web host.
 
 <h2 align="center">
-	<img alt="Itch loading indicator page" src="https://raw.githubusercontent.com/paufau/godot-itch-loading-indicator-page/refs/heads/main/assets/featured.png" />
+	<img alt="Easy Bootsplash" src="https://raw.githubusercontent.com/paufau/godot-easy-bootsplash/refs/heads/main/assets/featured.png" />
 </h2>
 
 ## ✨ Features
@@ -17,14 +17,14 @@ A loading screen for Godot web exports that covers game download. Made specifica
 - 🎨 Built-in look configuration available from the export preset
 - 🧩 Replace default template with HTML of your own
 
-See how the built-in template looks in every fit and placement combination on the [live test bench](https://paufau.github.io/godot-itch-loading-indicator-page/test/).
+See how the built-in template looks in every fit and placement combination on the [live test bench](https://paufau.github.io/godot-easy-bootsplash/test/).
 
 ## Usage
 
 1. Install the addon from [Asset Library](https://godotengine.org/asset-library/asset/5394) or from source (copy addons folder to your project directory)
 1. Enable the plugin in your Project Settings
-1. Replace `addons/itch_loading_indicator_page/assets/background` with your game icon or image
-1. Go to Project -> Export -> Web -> "Itch Loading Indicator Page" section
+1. Replace `addons/easy_bootsplash/assets/background` with your game icon or image
+1. Go to Project -> Export -> Web -> "Easy Bootsplash" section
 1. Configure properties to customize the look
 1. Export the project
 
@@ -53,7 +53,7 @@ See how the built-in template looks in every fit and placement combination on th
 
 **Your own markup.** Copy `public/default_template.html`, point `Template` at the copy, and address anything from `Assets` as `{{ASSETS_DIR}}/logo.svg`.
 
-**An intro of your own.** Set `Dismiss` to `Manually` and call `ILIP.hide()` from GDScript when your first cutscene is ready to be seen.
+**An intro of your own.** Set `Dismiss` to `Manually` and call `EBS.hide()` from GDScript when your first cutscene is ready to be seen.
 
 ---
 
@@ -71,11 +71,11 @@ When the overlay goes.
 
 - `After First Frame Drawn` waits for `RenderingServer.frame_post_draw`, so the loader will disappear right after the first game frame is drawn.
 - `On Engine Load` uses the engine's own start signal, which fires before the first frame is drawn, so the player might see an unfilled frame.
-- `Manually` leaves it to `ILIP.hide()` call in your own code.
+- `Manually` leaves it to `EBS.hide()` call in your own code.
 
 ---
 
-### `Template: String = "addons/itch_loading_indicator_page/public/default_template.html"`
+### `Template: String = "addons/easy_bootsplash/public/default_template.html"`
 
 HTML file to render.
 
@@ -89,9 +89,9 @@ Values substituted into the template, and carried into the game. The editor keep
 
 ---
 
-### `Assets: String = "addons/itch_loading_indicator_page/assets"`
+### `Assets: String = "addons/easy_bootsplash/assets"`
 
-Directory copied next to the shell as `ilip_assets/`, recursively.
+Directory copied next to the shell as `ebs_assets/`, recursively.
 `.import` files and dotfiles are skipped
 
 ---
@@ -116,13 +116,13 @@ Two more keys are read by the runtime rather than the template:
 | Key                        | Default                                                                                                                                          |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `progress_smoothing_ms`    | `600`. Time in ms for a full 0→100% sweep; the bar glides toward the real progress at that constant speed instead of jumping, and the overlay waits for the animation to finish before fading out. `0` disables smoothing. On a load failure the bar snaps and the overlay closes immediately. |
-| `hide_awaits_full_progress` | `false`. When `true`, `ILIP.hide()` first drives the bar to 100% (animated when smoothing is on) and only then hides the overlay.                 |
+| `hide_awaits_full_progress` | `false`. When `true`, `EBS.hide()` first drives the bar to 100% (animated when smoothing is on) and only then hides the overlay.                 |
 
 Feel free to add your own keys if you need to customize your own template
 
 ## Writing a template
 
-Tokens are substituted as plain text, and a parameter of the same name overrides a built-in token. The root element needs `id="ilip"`; the runtime finds it by that id.
+Tokens are substituted as plain text, and a parameter of the same name overrides a built-in token. The root element needs `id="ebs"`; the runtime finds it by that id.
 
 | Token              | Value                                                               |
 | ------------------ | ------------------------------------------------------------------- |
@@ -132,13 +132,13 @@ Tokens are substituted as plain text, and a parameter of the same name overrides
 | `{{any_key}}`      | Any key from `Parameters`. Objects and arrays arrive as JSON        |
 
 ```html
-<div id="ilip">
+<div id="ebs">
   <img alt="" data-src="{{IMAGE_SRC}}" />
   <p>{{tagline}}</p>
   <div class="bar"><i></i></div>
 </div>
 <style>
-  #ilip {
+  #ebs {
     position: absolute;
     inset: 0;
     z-index: 3;
@@ -149,7 +149,7 @@ Tokens are substituted as plain text, and a parameter of the same name overrides
     justify-content: center;
     transition: opacity 0.35s ease-out;
   }
-  #ilip.is-done {
+  #ebs.is-done {
     opacity: 0;
     pointer-events: none;
   }
@@ -161,7 +161,7 @@ Tokens are substituted as plain text, and a parameter of the same name overrides
   .bar i {
     display: block;
     height: 100%;
-    width: var(--ilip-progress-percent, 0%);
+    width: var(--ebs-progress-percent, 0%);
     background: #7cff6d;
     transition: width 0.2s linear;
   }
@@ -174,14 +174,34 @@ Two CSS custom properties on the root element stay up to date:
 
 ```css
 #my-bar {
-  width: var(--ilip-progress-percent, 0%);
+  width: var(--ebs-progress-percent, 0%);
 } /* "42.00%" */
 #my-ring {
-  opacity: var(--ilip-progress, 0);
+  opacity: var(--ebs-progress, 0);
 } /* 0..1 */
 ```
 
 When the overlay is dismissed the root gets the class `is-done`, then leaves the DOM 400 ms later, which is room for a CSS transition on that class.
+
+## Migrating from 1.x
+
+The addon used to be called _Itch Loading Indicator Page_, and 2.0.0 renames everything it exposes. Nothing is aliased, so a 1.x project needs four steps:
+
+1. Delete the old `addons/itch_loading_indicator_page` directory.
+1. Disable and re-enable the plugin in Project Settings. That swaps the `ILIPAutoHide` autoload for `EBSAutoHide`.
+1. Re-set the options in Project -> Export -> Web -> "Easy Bootsplash". The old `itch_loading_indicator_page/*` keys in `export_presets.cfg` are no longer read.
+1. In game code, replace `ILIP.` with `EBS.`.
+
+In a custom template, rename the ids and custom properties:
+
+| 1.x                             | 2.0.0                         |
+| ------------------------------- | ----------------------------- |
+| `#ilip`                         | `#ebs`                        |
+| `#ilip-art`, `-track`, `-fill`  | `#ebs-art`, `-track`, `-fill` |
+| `--ilip-progress`, and the rest | `--ebs-progress`, and the rest |
+| `window.ILIP`                   | `window.EBS`                  |
+
+The exported assets directory is now `ebs_assets/` instead of `ilip_assets/`.
 
 ## Author
 

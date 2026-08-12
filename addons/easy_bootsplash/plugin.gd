@@ -1,14 +1,14 @@
 @tool
 extends EditorPlugin
 
-const AUTOLOAD_NAME := "ILIPAutoHide"
-const AUTOLOAD_SCRIPT := "classes/ilip_auto_hide.gd"
+const AUTOLOAD_NAME := "EBSAutoHide"
+const AUTOLOAD_SCRIPT := "classes/ebs_auto_hide.gd"
 
-var _exporter: ILIPExportPlugin
+var _exporter: EBSExportPlugin
 
 
 func _enter_tree() -> void:
-	_exporter = ILIPExportPlugin.new()
+	_exporter = EBSExportPlugin.new()
 	add_export_plugin(_exporter)
 
 
@@ -18,7 +18,7 @@ func _exit_tree() -> void:
 
 
 func _enable_plugin() -> void:
-	add_autoload_singleton(AUTOLOAD_NAME, ILIPPaths.get_addon_root().path_join(AUTOLOAD_SCRIPT))
+	add_autoload_singleton(AUTOLOAD_NAME, EBSPaths.get_addon_root().path_join(AUTOLOAD_SCRIPT))
 
 
 func _disable_plugin() -> void:

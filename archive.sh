@@ -1,6 +1,6 @@
 cd "$(dirname "$0")"
 
-plugin_cfg="addons/itch_loading_indicator_page/plugin.cfg"
+plugin_cfg="addons/easy_bootsplash/plugin.cfg"
 version="$(sed -n 's/^version="\(.*\)"$/\1/p' "$plugin_cfg")"
 
 if [ -z "$version" ]; then
@@ -9,5 +9,5 @@ if [ -z "$version" ]; then
 fi
 
 mkdir -p dist
-git archive --prefix=ilip/ -o "./dist/ilip_${version}.zip" HEAD
-echo "Export successful! (dist/ilip_${version}.zip)"
+git archive --prefix=easy_bootsplash/ -o "./dist/easy_bootsplash_${version}.zip" HEAD
+echo "Export successful! (dist/easy_bootsplash_${version}.zip)"

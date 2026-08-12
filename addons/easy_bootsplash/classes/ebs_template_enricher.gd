@@ -1,5 +1,5 @@
 ## Fills a loading screen template with values.
-class_name ILIPTemplateEnricher
+class_name EBSTemplateEnricher
 extends RefCounted
 
 

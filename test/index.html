@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>ILIP template test bench</title>
+	<title>Easy Bootsplash template test bench</title>
 	<style>
 		:root {
 			--bg: #0F172A;
@@ -237,7 +237,7 @@
 	</style>
 </head>
 <body>
-	<h1>ILIP template test bench</h1>
+	<h1>Easy Bootsplash template test bench</h1>
 	<p class="subtitle">Renders <code>default_template.html</code> with the real <code>runtime.js</code> and a fake engine, then checks progress bar visibility and position in every fit &times; placement combination.</p>
 	<div id="toolbar">
 		<div class="segmented" role="group" aria-label="Preview orientation">
@@ -301,18 +301,18 @@
 		function collectFailures(win, params) {
 			var doc = win.document;
 			var failures = [];
-			var track = doc.getElementById("ilip-track");
+			var track = doc.getElementById("ebs-track");
 
 			if (!track) {
 				var caseError = doc.getElementById("case-error");
 
-				if (!caseError && win.__ilipCase && win.__ilipCase.overlayRemoved) {
+				if (!caseError && win.__easyBootsplashCase && win.__easyBootsplashCase.overlayRemoved) {
 					return [];
 				}
 
 				return [caseError
 					? "case page crashed: " + caseError.textContent
-					: "#ilip-track is missing from the DOM"];
+					: "#ebs-track is missing from the DOM"];
 			}
 
 			var display = win.getComputedStyle(track).display;
@@ -342,16 +342,16 @@
 					", bottom " + Math.round(rect.bottom) + ", viewport height " + vh + ")");
 			}
 
-			var root = doc.getElementById("ilip");
-			var progress = parseFloat(root ? root.style.getPropertyValue("--ilip-progress") : "");
+			var root = doc.getElementById("ebs");
+			var progress = parseFloat(root ? root.style.getPropertyValue("--ebs-progress") : "");
 
 			if (!(progress > 0)) {
-				failures.push("progress never updates (--ilip-progress = " +
-					(root ? root.style.getPropertyValue("--ilip-progress") || "empty" : "no #ilip") + ")");
+				failures.push("progress never updates (--ebs-progress = " +
+					(root ? root.style.getPropertyValue("--ebs-progress") || "empty" : "no #ebs") + ")");
 			}
 
 			if (Number(params.progress_smoothing_ms) > 0) {
-				var raw = win.ILIP.getProgress();
+				var raw = win.EBS.getProgress();
 
 				if (progress > raw + 0.001) {
 					failures.push("smoothing: displayed progress (" + progress.toFixed(3) +
@@ -359,14 +359,14 @@
 				}
 
 				if (root && !root.classList.contains("is-smooth")) {
-					failures.push("smoothing is on but #ilip never got the is-smooth class");
+					failures.push("smoothing is on but #ebs never got the is-smooth class");
 				}
 			}
 
-			var fill = doc.getElementById("ilip-fill");
+			var fill = doc.getElementById("ebs-fill");
 
 			if (!fill || fill.getBoundingClientRect().width <= 0) {
-				failures.push("#ilip-fill stays empty");
+				failures.push("#ebs-fill stays empty");
 			}
 
 			var cx = rect.left + rect.width / 2;
@@ -393,7 +393,7 @@
 				}
 			}
 
-			var margin = parseFloat(win.ILIP.params.progress_margin);
+			var margin = parseFloat(win.EBS.params.progress_margin);
 
 			switch (params.progress_placement) {
 				case "top":
@@ -415,10 +415,10 @@
 					}
 					break;
 				case "below":
-					var art = doc.getElementById("ilip-art");
+					var art = doc.getElementById("ebs-art");
 
 					if (params.fit === "cover" || params.fit === "contain") {
-						var artBottom = parseFloat(root.style.getPropertyValue("--ilip-art-bottom"));
+						var artBottom = parseFloat(root.style.getPropertyValue("--ebs-art-bottom"));
 
 						if (isNaN(artBottom)) {
 							artBottom = vh;
@@ -457,13 +457,13 @@
 
 		function waitForCompletion(win, params, timeoutMs) {
 			return pollUntil(function () {
-				return Boolean(win.__ilipCase && win.__ilipCase.overlayRemoved);
+				return Boolean(win.__easyBootsplashCase && win.__easyBootsplashCase.overlayRemoved);
 			}, timeoutMs).then(function (removed) {
 				if (!removed) {
 					return ["overlay was never dismissed"];
 				}
 
-				var state = win.__ilipCase;
+				var state = win.__easyBootsplashCase;
 				var failures = [];
 
 				if (params.hideAt && state.hideCalledAtRatio === null) {
@@ -491,12 +491,12 @@
 		function waitForProgress(win, params, timeoutMs) {
 			return pollUntil(function () {
 				var doc = win.document;
-				var root = doc && doc.getElementById("ilip");
-				var track = doc && doc.getElementById("ilip-track");
+				var root = doc && doc.getElementById("ebs");
+				var track = doc && doc.getElementById("ebs-track");
 
 				return params.progress_hidden
 					? Boolean(track)
-					: Boolean(root) && parseFloat(root.style.getPropertyValue("--ilip-progress")) > 0;
+					: Boolean(root) && parseFloat(root.style.getPropertyValue("--ebs-progress")) > 0;
 			}, timeoutMs);
 		}
 

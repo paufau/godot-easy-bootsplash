@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>ILIP case</title>
+	<title>Easy Bootsplash case</title>
 	<style>
 		html, body {
 			margin: 0;
@@ -64,12 +64,12 @@
 		<span class="lamp" id="lamp-hide">hide()</span>
 		<span class="lamp" id="lamp-hidden">hidden</span>
 	</div>
-	<script src="../addons/itch_loading_indicator_page/public/runtime.js"></script>
+	<script src="../addons/easy_bootsplash/public/runtime.js"></script>
 	<script>
 		(async function () {
 			"use strict";
 
-			// Mirrors DEFAULT_PARAMETERS in classes/ilip_export_plugin.gd.
+			// Mirrors DEFAULT_PARAMETERS in classes/ebs_export_plugin.gd.
 			var DEFAULTS = {
 				background_color: "#5F5F5F",
 				fit: "centered",
@@ -104,7 +104,7 @@
 			var jump = flag("jump");
 			var hideAt = Number(query.get("hideAt")) || 0;
 
-			window.ILIP.params = params;
+			window.EBS.params = params;
 
 			var state = {
 				params: params,
@@ -113,7 +113,7 @@
 				lastDisplayed: null,
 				overlayRemoved: false
 			};
-			window.__ilipCase = state;
+			window.__easyBootsplashCase = state;
 
 			function light(id, label) {
 				var lamp = document.getElementById(id);
@@ -121,10 +121,10 @@
 				lamp.textContent = label;
 			}
 
-			var innerHide = window.ILIP.hide;
-			window.ILIP.hide = function () {
+			var innerHide = window.EBS.hide;
+			window.EBS.hide = function () {
 				if (state.hideCalledAtRatio === null) {
-					state.hideCalledAtRatio = window.ILIP.getProgress();
+					state.hideCalledAtRatio = window.EBS.getProgress();
 					light("lamp-hide", "hide() @ " + Math.round(state.hideCalledAtRatio * 100) + "%");
 				}
 
@@ -133,11 +133,11 @@
 
 			var seenOverlay = false;
 			var watcher = setInterval(function () {
-				var node = document.getElementById("ilip");
+				var node = document.getElementById("ebs");
 
 				if (node) {
 					seenOverlay = true;
-					var value = parseFloat(node.style.getPropertyValue("--ilip-progress"));
+					var value = parseFloat(node.style.getPropertyValue("--ebs-progress"));
 
 					if (!isNaN(value)) {
 						state.lastDisplayed = value;
@@ -156,12 +156,12 @@
 			}, 50);
 
 			var tokens = Object.assign({
-				IMAGE_SRC: "../addons/itch_loading_indicator_page/assets/background.png",
-				ASSETS_DIR: "../addons/itch_loading_indicator_page/assets",
-				PROJECT_NAME: "ILIP test case"
+				IMAGE_SRC: "../addons/easy_bootsplash/assets/background.png",
+				ASSETS_DIR: "../addons/easy_bootsplash/assets",
+				PROJECT_NAME: "Easy Bootsplash test case"
 			}, params);
 
-			var response = await fetch("../addons/itch_loading_indicator_page/public/default_template.html");
+			var response = await fetch("../addons/easy_bootsplash/public/default_template.html");
 
 			if (!response.ok) {
 				throw new Error("template fetch failed: HTTP " + response.status +
@@ -169,7 +169,7 @@
 			}
 
 			var template = await response.text();
-			// Same substitution as classes/ilip_template_enricher.gd.
+			// Same substitution as classes/ebs_template_enricher.gd.
 			var fragment = template.replace(/\{\{(\w+)\}\}/g, function (match, key) {
 				return key in tokens ? String(tokens[key]) : match;
 			});
@@ -177,7 +177,7 @@
 			// The export plugin injects the fragment right before <canvas>.
 			document.getElementById("canvas").insertAdjacentHTML("beforebegin", fragment);
 
-			window.ILIP.hydrate();
+			window.EBS.hydrate();
 
 			function FakeEngine() {}
 
@@ -221,7 +221,7 @@
 
 						if (hideAt > 0 && loaded >= hideAt) {
 							hideAt = 0;
-							window.ILIP.hide();
+							window.EBS.hide();
 						}
 					}, 100);
 				});

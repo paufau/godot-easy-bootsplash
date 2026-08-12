@@ -1,7 +1,7 @@
 (function () {
 	"use strict";
 
-	if (window.ILIP && window.ILIP.installed) {
+	if (window.EBS && window.EBS.installed) {
 		return;
 	}
 
@@ -9,7 +9,7 @@
 	// How long a shell that loads the engine late gets before the overlay gives up
 	// and uncovers what is underneath.
 	var GRACE_MS = 3000;
-	var ROOT_ID = "ilip";
+	var ROOT_ID = "ebs";
 	var DONE_CLASS = "is-done";
 	var SMOOTH_CLASS = "is-smooth";
 	var MAX_TICK_MS = 100;
@@ -42,7 +42,7 @@
 		try {
 			handler.apply(null, args);
 		} catch (error) {
-			console.error("ILIP: handler failed.", error);
+			console.error("EBS: handler failed.", error);
 		}
 	}
 
@@ -60,8 +60,8 @@
 		var node = findRoot();
 
 		if (node) {
-			node.style.setProperty("--ilip-progress", String(value));
-			node.style.setProperty("--ilip-progress-percent", (value * 100).toFixed(2) + "%");
+			node.style.setProperty("--ebs-progress", String(value));
+			node.style.setProperty("--ebs-progress-percent", (value * 100).toFixed(2) + "%");
 		}
 	}
 
@@ -232,14 +232,14 @@
 		}
 	};
 
-	window.ILIP = api;
+	window.EBS = api;
 
 	function wrapEngine(engineClass) {
-		if (!engineClass || engineClass.ilipWrapped || !engineClass.prototype) {
+		if (!engineClass || engineClass.ebsWrapped || !engineClass.prototype) {
 			return;
 		}
 
-		engineClass.ilipWrapped = true;
+		engineClass.ebsWrapped = true;
 
 		["startGame", "start"].forEach(function (name) {
 			var original = engineClass.prototype[name];
@@ -297,7 +297,7 @@
 				}
 			});
 		} catch (error) {
-			console.warn("ILIP: could not hook Engine, falling back to the shell status.", error);
+			console.warn("EBS: could not hook Engine, falling back to the shell status.", error);
 		}
 	}
 
@@ -327,7 +327,7 @@
 			return;
 		}
 
-		node.style.setProperty("--ilip-art-bottom", bottom.toFixed(1) + "px");
+		node.style.setProperty("--ebs-art-bottom", bottom.toFixed(1) + "px");
 	}
 
 	function hydrateArt() {
