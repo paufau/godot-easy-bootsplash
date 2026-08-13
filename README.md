@@ -6,9 +6,24 @@
 
 A loading screen for Godot web exports that covers the game download. Built with itch.io in mind, works on any web host.
 
-<h2 align="center">
-	<img alt="Easy Bootsplash" src="https://raw.githubusercontent.com/paufau/godot-easy-bootsplash/refs/heads/main/assets/featured.png" />
-</h2>
+<table>
+	<tr>
+		<td width="50%"><img alt="Centered art with the bar below it" src="https://raw.githubusercontent.com/paufau/godot-easy-bootsplash/refs/heads/main/assets/rec1.gif" /></td>
+		<td width="50%"><img alt="Key art covering the screen, thin bar at the bottom" src="https://raw.githubusercontent.com/paufau/godot-easy-bootsplash/refs/heads/main/assets/rec2.gif" /></td>
+	</tr>
+	<tr>
+		<td align="center">Defaults: art centered, bar below</td>
+		<td align="center"><code>fit: cover</code> with the bar pinned to the bottom</td>
+	</tr>
+	<tr>
+		<td><img alt="Centered art with a full-width bar pinned to the bottom edge" src="https://raw.githubusercontent.com/paufau/godot-easy-bootsplash/refs/heads/main/assets/rec3.gif" /></td>
+		<td><img alt="Custom template with an animated SVG logo" src="https://raw.githubusercontent.com/paufau/godot-easy-bootsplash/refs/heads/main/assets/rec4.gif" /></td>
+	</tr>
+	<tr>
+		<td align="center">Full-width bar on the screen edge</td>
+		<td align="center">A template of your own, animated SVG included</td>
+	</tr>
+</table>
 
 ## ✨ Features
 
