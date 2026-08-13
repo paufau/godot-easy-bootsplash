@@ -25,14 +25,14 @@ A loading screen for Godot web exports that covers the game download. Built with
 	</tr>
 </table>
 
+See list of other configuration options supported on the [live test bench](https://paufau.github.io/godot-easy-bootsplash/test/).
+
 ## ✨ Features
 
 - 🚀 Quick and easy setup with a bunch of pre-made options
 - 🖼️ Shows your art while the game downloads
 - 🎨 Built-in look configuration available from the export preset
 - 🧩 Replace default template with HTML of your own
-
-See how the built-in template looks in every fit and placement combination on the [live test bench](https://paufau.github.io/godot-easy-bootsplash/test/).
 
 ## Usage
 
@@ -45,24 +45,24 @@ See how the built-in template looks in every fit and placement combination on th
 
 ## Use cases
 
-**Fullscreen key art, no bar.** Set `Parameters` to 
+**Fullscreen key art, no bar.** Set `Parameters` to
 
 ```json
-{ 
-  "fit": "cover", 
-  "progress_hidden": true 
+{
+  "fit": "cover",
+  "progress_hidden": true
 }
 ```
 
-**Art plus a thin bar pinned to the bottom.** 
+**Art plus a thin bar pinned to the bottom.**
 
 ```json
-{ 
-  "fit": "cover", 
-  "progress_placement": "bottom", 
-  "progress_width": "100vw", 
-  "progress_height": "12px", 
-  "progress_color": "#7CFF6D" 
+{
+  "fit": "cover",
+  "progress_placement": "bottom",
+  "progress_width": "100vw",
+  "progress_height": "12px",
+  "progress_color": "#7CFF6D"
 }
 ```
 
@@ -128,10 +128,10 @@ Directory copied next to the shell as `ebs_assets/`, recursively.
 
 Two more keys are read by the runtime rather than the template:
 
-| Key                        | Default                                                                                                                                          |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `progress_smoothing_ms`    | `600`. Time to close 90% of the distance to the real progress, whatever that distance is. The bar follows instead of jumping, moving fast while it is far behind and easing off as it arrives, and the overlay waits for the animation to finish before fading out. Raise it for calmer motion at the cost of trailing further behind; lower it to track the loader more tightly. `0` disables smoothing, leaving the bar to step with the loader (a CSS transition in the template can smooth that instead). On a load failure the bar snaps and the overlay closes immediately. |
-| `hide_awaits_full_progress` | `false`. When `true`, `EBS.hide()` first drives the bar to 100% (animated when smoothing is on) and only then hides the overlay.                 |
+| Key                         | Default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `progress_smoothing_ms`     | `600`. Time to close 90% of the distance to the real progress, whatever that distance is. The bar follows instead of jumping, moving fast while it is far behind and easing off as it arrives, and the overlay waits for the animation to finish before fading out. Raise it for calmer motion at the cost of trailing further behind; lower it to track the loader more tightly. `0` disables smoothing, leaving the bar to step with the loader (a CSS transition in the template can smooth that instead). On a load failure the bar snaps and the overlay closes immediately. |
+| `hide_awaits_full_progress` | `false`. When `true`, `EBS.hide()` first drives the bar to 100% (animated when smoothing is on) and only then hides the overlay.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 Feel free to add your own keys if you need to customize your own template
 
@@ -209,12 +209,12 @@ The addon used to be called _Itch Loading Indicator Page_, and 2.0.0 renames eve
 
 In a custom template, rename the ids and custom properties:
 
-| 1.x                             | 2.0.0                         |
-| ------------------------------- | ----------------------------- |
-| `#ilip`                         | `#ebs`                        |
-| `#ilip-art`, `-track`, `-fill`  | `#ebs-art`, `-track`, `-fill` |
+| 1.x                             | 2.0.0                          |
+| ------------------------------- | ------------------------------ |
+| `#ilip`                         | `#ebs`                         |
+| `#ilip-art`, `-track`, `-fill`  | `#ebs-art`, `-track`, `-fill`  |
 | `--ilip-progress`, and the rest | `--ebs-progress`, and the rest |
-| `window.ILIP`                   | `window.EBS`                  |
+| `window.ILIP`                   | `window.EBS`                   |
 
 The exported assets directory is now `ebs_assets/` instead of `ilip_assets/`.
 
