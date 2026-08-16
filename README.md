@@ -25,27 +25,50 @@ Custom loading screen for Godot web exports, which replaces the default loading 
 	</tr>
 </table>
 
-See list of other configuration options supported on the [live test bench](https://paufau.github.io/godot-easy-bootsplash/test/).
-
-## ✨ Features
-
-- 🚀 Quick and easy setup with a bunch of pre-made options
-- 🖼️ Shows your art while the game downloads
-- 🎨 Built-in look configuration available from the export preset
-- 🧩 Replace default template with HTML of your own
+Try every option live on the [test bench](https://paufau.github.io/godot-easy-bootsplash/test/).
 
 ## Usage
 
-1. Install the addon from [Asset Library](https://godotengine.org/asset-library/asset/5394) or from source (copy addons folder to your project directory)
+1. Install the addon from [Asset Library](https://godotengine.org/asset-library/asset/5394) or from source (copy `addons` folder to your project directory)
 1. Enable the plugin in your Project Settings
 1. Replace `addons/easy_bootsplash/assets/background` with your game icon or image
-1. Go to Project -> Export -> Web -> "Easy Bootsplash" section
-1. Configure properties to customize the look
+1. Tune the look in Project -> Export -> Web -> "Easy Bootsplash", mostly through `Parameters` (reference below)
 1. Export the project
 
-## Use cases
+## Parameters
 
-**Fullscreen key art, no bar.** Set `Parameters` to
+The `Parameters` dictionary is converted to JSON and accessible in the HTML template.
+Can be used to control elements or behaviors
+
+Existing properties:
+
+| Key                  | Default                    | Notes                                                                          |
+| -------------------- | -------------------------- | ------------------------------------------------------------------------------ |
+| `background_color`   | `#5F5F5F`                  |                                                                                |
+| `fit`                | `centered`                 | `cover` / `contain` fill the screen with the art                               |
+| `progress_hidden`    | `false`                    | `true` removes the bar                                                         |
+| `progress_placement` | `below`                    | `top` / `center` / `bottom` position it on the screen instead of under the art |
+| `progress_width`     | `min(50vw, 360px)`         |                                                                                |
+| `progress_height`    | `10px`                     |                                                                                |
+| `progress_radius`    | `999px`                    |                                                                                |
+| `progress_margin`    | `12px`                     | Gap between the bar and the screen edge / artwork                              |
+| `progress_color`     | `#FF244A`                  |                                                                                |
+| `track_color`        | `rgba(255, 255, 255, 0.9)` |                                                                                |
+
+Two more keys apply even to custom templates:
+
+| Key                         | Default | Notes                                                                                                                                                                                                                                                  |
+| --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `progress_smoothing_ms`     | `600`   | Time to close 90% of the gap to the real progress, so the bar follows instead of jumping. Raise it for calmer motion that trails further behind, lower it for tighter tracking, `0` to step with the loader and let a CSS transition smooth it instead |
+| `hide_awaits_full_progress` | `false` | When `true`, `EBS.hide()` first drives the bar to 100% (animated when smoothing is on), then hides the overlay.                                                                                                                                        |
+
+Keys of your own reach the template the same way, as `{{key}}`.
+
+> _Note_: Only what JSON format can carry transferred to the page: _strings, numbers, bools, arrays and dictionaries_. The editor keeps the type you picked, so a bool is still a bool, while a `Color` or a `Vector2` arrives as its Godot stringified form
+
+### Examples / Presets
+
+**Fullscreen key art, no bar.**
 
 ```json
 {
@@ -66,78 +89,27 @@ See list of other configuration options supported on the [live test bench](https
 }
 ```
 
-**Your own markup.** Copy `public/default_template.html`, point `Template` at the copy, and address anything from `Assets` as `{{ASSETS_DIR}}/logo.svg`.
-
-**An intro of your own.** Set `Dismiss` to `Manually` and call `EBS.hide()` from GDScript when your first cutscene is ready to be seen.
-
----
-
 ## Export options
 
-### `Enabled: bool = true`
+The rest of the "Easy Bootsplash" section in the Web export preset:
 
-Turn the overlay off for a single preset.
+| Option       | Default                                               | What it does                                                                                               |
+| ------------ | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `Enabled`    | `true`                                                | Turn the overlay off for a single preset                                                                   |
+| `Dismiss`    | `After First Frame Drawn`                             | When the overlay goes away, see below                                                                      |
+| `Template`   | `addons/easy_bootsplash/public/default_template.html` | HTML file to render                                                                                        |
+| `Parameters` | pre-filled, see [Parameters](#parameters)             | Values substituted into the template and carried into the game                                             |
+| `Assets`     | `addons/easy_bootsplash/assets`                       | Directory copied next to the shell as `ebs_assets/`, recursively. `.import` files and dotfiles are skipped |
 
----
+`Dismiss` values:
 
-### `Dismiss: "On Engine Load" | "After First Frame Drawn" | "Manually" = "After First Frame Drawn"`
+- `After First Frame Drawn`: waits for `RenderingServer.frame_post_draw`, so the loader disappears right after the first game frame is drawn
+- `On Engine Load`: uses the engine's own start signal, which fires before the first frame, so the player might see an unfilled frame
+- `Manually`: nothing happens until you call `EBS.hide()` from GDScript, e.g. when your intro cutscene is ready to be seen
 
-When the overlay goes.
+## Custom templates
 
-- `After First Frame Drawn` waits for `RenderingServer.frame_post_draw`, so the loader will disappear right after the first game frame is drawn.
-- `On Engine Load` uses the engine's own start signal, which fires before the first frame is drawn, so the player might see an unfilled frame.
-- `Manually` leaves it to `EBS.hide()` call in your own code.
-
----
-
-### `Template: String = "addons/easy_bootsplash/public/default_template.html"`
-
-HTML file to render.
-
----
-
-### `Parameters: Dictionary`
-
-Values substituted into the template, and carried into the game. The editor keeps the type you picked, so a bool is still a bool where it lands.
-
-> _Note_: Only what JSON format can carry survives the trip to the page: _strings, numbers, bools, arrays and dictionaries_. A `Color` or a `Vector2` arrives as its Godot stringified form.
-
----
-
-### `Assets: String = "addons/easy_bootsplash/assets"`
-
-Directory copied next to the shell as `ebs_assets/`, recursively.
-`.import` files and dotfiles are skipped
-
----
-
-## Parameters the built-in template reads
-
-| Key                  | Default                                                      |
-| -------------------- | ------------------------------------------------------------ |
-| `background_color`   | `#5F5F5F`                                                    |
-| `fit`                | `centered`, or `cover` / `contain` to fill the screen        |
-| `progress_hidden`    | `false`; `true` drops the bar                                |
-| `progress_placement` | `below`, or `top` / `center` / `bottom` to pin it to an edge |
-| `progress_width`     | `min(50vw, 360px)`                                           |
-| `progress_height`    | `10px`                                                       |
-| `progress_radius`    | `999px`                                                      |
-| `progress_margin`    | `12px`; gap between the bar and the screen edge / artwork    |
-| `progress_color`     | `#FF244A`                                                    |
-| `track_color`        | `rgba(255, 255, 255, 0.9)`                                   |
-
-Two more keys are read by the runtime rather than the template:
-
-| Key                         | Default                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `progress_smoothing_ms`     | `600`. Time to close 90% of the distance to the real progress, whatever that distance is. The bar follows instead of jumping, moving fast while it is far behind and easing off as it arrives, and the overlay waits for the animation to finish before fading out. Raise it for calmer motion at the cost of trailing further behind; lower it to track the loader more tightly. `0` disables smoothing, leaving the bar to step with the loader (a CSS transition in the template can smooth that instead). On a load failure the bar snaps and the overlay closes immediately. |
-| `hide_awaits_full_progress` | `false`. When `true`, `EBS.hide()` first drives the bar to 100% (animated when smoothing is on) and only then hides the overlay.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-
-Feel free to add your own keys if you need to customize your own template
-
-## Writing a template
-
-Tokens are substituted as plain text, and a parameter of the same name overrides a built-in token. The root element needs `id="ebs"`; the runtime finds it by that id.
+Copy `public/default_template.html` and point `Template` at the copy. The root element needs `id="ebs"`; the runtime finds it by that id. Tokens are substituted as plain text, and a parameter of the same name overrides a built-in token.
 
 | Token              | Value                                                               |
 | ------------------ | ------------------------------------------------------------------- |
@@ -145,6 +117,8 @@ Tokens are substituted as plain text, and a parameter of the same name overrides
 | `{{ASSETS_DIR}}`   | Directory the assets were copied into, empty when unset             |
 | `{{PROJECT_NAME}}` | `application/config/name`                                           |
 | `{{any_key}}`      | Any key from `Parameters`. Objects and arrays arrive as JSON        |
+
+Anything from `Assets` is addressed as `{{ASSETS_DIR}}/logo.svg` by its name.
 
 ```html
 <div id="ebs">
@@ -182,8 +156,6 @@ Tokens are substituted as plain text, and a parameter of the same name overrides
   }
 </style>
 ```
-
-## Runtime API
 
 Two CSS custom properties on the root element stay up to date:
 
