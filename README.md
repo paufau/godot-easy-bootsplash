@@ -4,7 +4,7 @@
 ![Static Badge](https://img.shields.io/badge/platform-Web-7a34eb)
 ![Static Badge](https://img.shields.io/badge/shell-untouched-81B622)
 
-A loading screen for Godot web exports that covers the game download. Built with itch.io in mind, works on any web host.
+Custom loading screen for Godot web exports, which replaces the default loading bar on itch.io while your game downloads
 
 <table>
 	<tr>
@@ -13,15 +13,15 @@ A loading screen for Godot web exports that covers the game download. Built with
 	</tr>
 	<tr>
 		<td align="center">Defaults: art centered, bar below</td>
-		<td align="center"><code>fit: cover</code> with the bar pinned to the bottom</td>
+		<td align="center">image <code>fit: cover</code> with progress at the bottom</td>
 	</tr>
 	<tr>
 		<td><img alt="Centered art with a full-width bar pinned to the bottom edge" src="https://raw.githubusercontent.com/paufau/godot-easy-bootsplash/refs/heads/main/assets/rec3.gif" /></td>
 		<td><img alt="Custom template with an animated SVG logo" src="https://raw.githubusercontent.com/paufau/godot-easy-bootsplash/refs/heads/main/assets/rec4.gif" /></td>
 	</tr>
 	<tr>
-		<td align="center">Full-width bar on the screen edge</td>
-		<td align="center">A template of your own, animated SVG included</td>
+		<td align="center">Full-width progress at the very bottom</td>
+		<td align="center">Any custom HTML template of your own</td>
 	</tr>
 </table>
 
@@ -196,27 +196,7 @@ Two CSS custom properties on the root element stay up to date:
 } /* 0..1 */
 ```
 
-When the overlay is dismissed the root gets the class `is-done`, then leaves the DOM 400 ms later, which is room for a CSS transition on that class.
-
-## Migrating from 1.x
-
-The addon used to be called _Itch Loading Indicator Page_, and 2.0.0 renames everything it exposes. Nothing is aliased, so a 1.x project needs four steps:
-
-1. Delete the old `addons/itch_loading_indicator_page` directory.
-1. Disable and re-enable the plugin in Project Settings. That swaps the `ILIPAutoHide` autoload for `EBSAutoHide`.
-1. Re-set the options in Project -> Export -> Web -> "Easy Bootsplash". The old `itch_loading_indicator_page/*` keys in `export_presets.cfg` are no longer read.
-1. In game code, replace `ILIP.` with `EBS.`.
-
-In a custom template, rename the ids and custom properties:
-
-| 1.x                             | 2.0.0                          |
-| ------------------------------- | ------------------------------ |
-| `#ilip`                         | `#ebs`                         |
-| `#ilip-art`, `-track`, `-fill`  | `#ebs-art`, `-track`, `-fill`  |
-| `--ilip-progress`, and the rest | `--ebs-progress`, and the rest |
-| `window.ILIP`                   | `window.EBS`                   |
-
-The exported assets directory is now `ebs_assets/` instead of `ilip_assets/`.
+> When the overlay is dismissed the root gets the class `is-done`, then leaves the DOM 400 ms later, which is room for a CSS transition on that class.
 
 ## Author
 
@@ -224,6 +204,8 @@ The exported assets directory is now `ebs_assets/` instead of `ilip_assets/`.
 
 ## Sponsor & Support
 
-If you found the addon useful, you can support me here:
+⭐ _Star_ ⭐ the repo if it saved you time
+
+You can also support me here:
 
 <a href='https://ko-fi.com/Y8Y315L7NK' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
